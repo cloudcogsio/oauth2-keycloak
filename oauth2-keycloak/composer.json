@@ -1,5 +1,20 @@
 {
-	"name" : "oauth2-keycloak/oauth2-keycloak",
+	"name" : "cloudcogsio/oauth2-keycloak",
+	"type" : "library",
+	"license" : "MIT",
+	"authors" : [{
+			"name" : "Ricardo Assing",
+			"email" : "ricardo@tsiana.ca"
+		}
+	],
+	"keywords" : [
+		"cloudcogs",
+		"cloudcogs.io",
+		"oauth2",
+		"keycloak"
+	],
+	"description" : "Keycloak OAuth2 client",
+	"minimum-stability" : "dev",
 	"autoload" : {
 		"psr-4" : {
 			"Cloudcogs\\OAuth2\\Client\\" : "src/"
