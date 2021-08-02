@@ -1,0 +1,12 @@
+{
+	"name" : "oauth2-keycloak/oauth2-keycloak",
+	"autoload" : {
+		"psr-4" : {
+			"Cloudcogs\\OAuth2\\Client\\" : "src/"
+		}
+	},
+	"require" : {
+		"league/oauth2-client" : "~2.6.0",
+		"firebase/php-jwt" : "~5.4.0"
+	}
+}
