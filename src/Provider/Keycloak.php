@@ -21,6 +21,9 @@ use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\InvalidConfigFileExcepti
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Config;
 use League\OAuth2\Client\Token\AccessTokenInterface;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\PublicKeyCache\PublicKeyCacheInterface;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Client;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\TokenIntrospectionException;
 
 class Keycloak extends AbstractProvider
 {
@@ -333,6 +336,41 @@ class Keycloak extends AbstractProvider
     public function getCertificateEndpoint()
     {
         return $this->getOIDCEndpoints()->jwks_uri;
+    }
+    
+    /**
+     * Use the keycloak token introspection endpoint to decode a token
+     * This is not required for usual operation but is provided here for convience of decoding tokens. Any token issued by Keycloak can be introspected using this method.
+     * 
+     * The accessToken is automatically decoded locally using the cached public key.
+     * Data is populated in the \Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceOwner class.
+     * 
+     * @param string $token
+     * @throws TokenIntrospectionException
+     * @return mixed
+     */
+    public function introspectToken(string $token)
+    {
+        $HttpRequest = new Request("POST", $this->getIntrospectionEndpoint(), 
+            [
+                'Content-Type' => 'application/x-www-form-urlencoded',
+                'Accept' => 'application/json',
+                
+            ], 
+            "client_id=".urlencode($this->clientId)."&client_secret=".urlencode($this->clientSecret)."&token=".$token
+        );
+        
+        /** @var $HttpResponse \GuzzleHttp\Psr7\Response **/
+        $HttpResponse = (new Client())->sendRequest($HttpRequest);
+        
+        if ($HttpResponse->getStatusCode() == "200")
+        {
+            return json_decode((string) $HttpResponse->getBody());
+        }
+        else
+        {
+            throw new TokenIntrospectionException($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+        }
     }
 }
 
