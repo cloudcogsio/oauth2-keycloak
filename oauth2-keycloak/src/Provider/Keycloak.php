@@ -13,14 +13,12 @@ namespace Cloudcogs\OAuth2\Client\Provider;
 
 use League\OAuth2\Client\Provider\AbstractProvider;
 use Psr\Http\Message\ResponseInterface;
-use Cloudcogs\OAuth2\Client\Provider\Keycloak\AccessToken;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\OpenIDConnectDiscovery;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\RequiredOptionMissingException;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceOwner;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\InvalidConfigFileException;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Config;
-use League\OAuth2\Client\Grant\AbstractGrant;
 use League\OAuth2\Client\Token\AccessTokenInterface;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\PublicKeyCache\PublicKeyCacheInterface;
 
@@ -249,20 +247,6 @@ class Keycloak extends AbstractProvider
         return [
             'Authorization' => "Bearer $token"
         ];
-    }
-    
-    /**
-     * Override default AccessToken class and return custom extended AccessToken class
-     * 
-     * NOTE: This requires a change in \League\OAuth2\Client\Provider\AbstractProvider.php
-     * @see https://github.com/thephpleague/oauth2-client/issues/897
-     * 
-     * {@inheritDoc}
-     * @see \League\OAuth2\Client\Provider\AbstractProvider::createAccessToken()
-     */
-    protected function createAccessToken(array $response, AbstractGrant $grant)
-    {
-        return new AccessToken($response);
     }
 
     /**
