@@ -13,19 +13,21 @@ namespace Cloudcogs\OAuth2\Client\Provider;
 
 use League\OAuth2\Client\Provider\AbstractProvider;
 use Psr\Http\Message\ResponseInterface;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\AccessToken;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\OpenIDConnectDiscovery;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\RequiredOptionMissingException;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceOwner;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\InvalidConfigFileException;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Config;
+use League\OAuth2\Client\Grant\AbstractGrant;
 use League\OAuth2\Client\Token\AccessTokenInterface;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\PublicKeyCache\PublicKeyCacheInterface;
 
 class Keycloak extends AbstractProvider
 {
     /**
-     * 
+     *
      * @var string
      */
     const ACCESS_TOKEN_RESOURCE_OWNER_ID = "sub";
@@ -38,7 +40,7 @@ class Keycloak extends AbstractProvider
     /**
      * Key used in the $options array for passing in an object implementing the \Cloudcogs\OAuth2\Client\Provider\Keycloak\PublicKeyCache\PublicKeyCacheInterface
      * This is used to cache the keycloak realm public key.
-     * 
+     *
      * If not provided, the builtin 'file' driver will be used.
      * @see \Cloudcogs\OAuth2\Client\Provider\Keycloak\PublicKeyCache\File
      */
@@ -54,33 +56,33 @@ class Keycloak extends AbstractProvider
     
     /**
      * The Keycloak realm
-     * 
+     *
      * @var string
      */
     protected $realm;
     
     /**
      * Keycloak JSON configuration (recommended but optional)
-     * 
+     *
      * Pass 'config' key to $options array pointing to 'keycloak.json' configuration file.
      * 'keycloak.json' can be retrieved from the Keycloak server, 'Client->Installation' tab.
-     * 
-     * 
+     *
+     *
      * @var \Cloudcogs\OAuth2\Client\Provider\Keycloak\Config
      */
     protected $config;
     
     /**
      * The composed OpenID Connect Discovery object
-     * 
-     * @var \Cloudcogs\OAuth2\Client\Provider\Keycloak\OpenIDConnectDiscovery 
+     *
+     * @var \Cloudcogs\OAuth2\Client\Provider\Keycloak\OpenIDConnectDiscovery
      */
     protected $OIDCEndpoints;
     
     /**
      * Minimum required options for the constructor if no keycloak.json configuration file is provided.
      * These are used for autodiscovery of endpoints via the Keycloak well-known endpoint
-     * 
+     *
      * @var array
      */
     protected $required = ['authServerUrl','realm'];
@@ -95,10 +97,10 @@ class Keycloak extends AbstractProvider
      *     override this provider's default behavior. Collaborators include
      *     `grantFactory`, `requestFactory`, and `httpClient`.
      *     Individual providers may introduce more collaborators, as needed.
-     *     
+     *
      * For this Keycloak client, minimum required parameters for the constructor are
      * 'authServerUrl' and 'realm' if no 'keycloak.json' config file is provided.
-     *     
+     *
      * @throws RequiredOptionMissingException
      */
     public function __construct(array $options = [], array $collaborators = [])
@@ -112,7 +114,7 @@ class Keycloak extends AbstractProvider
         }
         
         // Config file not passed, check for authServerUrl and realm keys
-        else 
+        else
         {
             /**
              * Check for required options for auto-discovery
@@ -147,7 +149,7 @@ class Keycloak extends AbstractProvider
     
     /**
      * Loads a 'keycloak.json file' containing the configuration required for interaction with the keycloak server.
-     * 
+     *
      * @param string $file Full path and filename of the configuration file
      * @throws InvalidConfigFileException
      * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak
@@ -186,16 +188,16 @@ class Keycloak extends AbstractProvider
     
     /**
      * Return the OpenIDConnectDiscovery object which can be queried for discovered endpoints and configuration.
-     * 
+     *
      * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\OpenIDConnectDiscovery
      */
     public function getOIDCEndpoints() : OpenIDConnectDiscovery
     {
         return $this->OIDCEndpoints;
     }
-
+    
     /**
-     * 
+     *
      * {@inheritDoc}
      * @see \League\OAuth2\Client\Provider\AbstractProvider::getDefaultScopes()
      */
@@ -205,7 +207,7 @@ class Keycloak extends AbstractProvider
     }
     
     /**
-     * 
+     *
      * {@inheritDoc}
      * @see \League\OAuth2\Client\Provider\AbstractProvider::getScopeSeparator()
      */
@@ -213,9 +215,9 @@ class Keycloak extends AbstractProvider
     {
         return ' ';
     }
-
+    
     /**
-     * 
+     *
      * {@inheritDoc}
      * @see \League\OAuth2\Client\Provider\AbstractProvider::checkResponse()
      */
@@ -226,9 +228,9 @@ class Keycloak extends AbstractProvider
             throw new IdentityProviderException(@$data['error']." [".@$data['error_response']."]", $response->getStatusCode(), $data);
         }
     }
-
+    
     /**
-     * 
+     *
      * {@inheritDoc}
      * @see \League\OAuth2\Client\Provider\AbstractProvider::createResourceOwner()
      */
@@ -238,7 +240,7 @@ class Keycloak extends AbstractProvider
     }
     
     /**
-     * 
+     *
      * {@inheritDoc}
      * @see \League\OAuth2\Client\Provider\AbstractProvider::getAuthorizationHeaders()
      */
@@ -248,9 +250,23 @@ class Keycloak extends AbstractProvider
             'Authorization' => "Bearer $token"
         ];
     }
-
+    
     /**
-     * 
+     * Override default AccessToken class and return custom extended AccessToken class
+     *
+     * NOTE: This requires a change in \League\OAuth2\Client\Provider\AbstractProvider.php
+     * @see https://github.com/thephpleague/oauth2-client/issues/897
+     *
+     * {@inheritDoc}
+     * @see \League\OAuth2\Client\Provider\AbstractProvider::createAccessToken()
+     */
+    protected function createAccessToken(array $response, AbstractGrant $grant)
+    {
+        return new AccessToken($response);
+    }
+    
+    /**
+     *
      * {@inheritDoc}
      * @see \League\OAuth2\Client\Provider\AbstractProvider::getResourceOwnerDetailsUrl()
      */
@@ -260,7 +276,7 @@ class Keycloak extends AbstractProvider
     }
     
     /**
-     * 
+     *
      * {@inheritDoc}
      * @see \League\OAuth2\Client\Provider\AbstractProvider::getBaseAuthorizationUrl()
      */
@@ -268,9 +284,9 @@ class Keycloak extends AbstractProvider
     {
         return $this->getOIDCEndpoints()->authorization_endpoint;
     }
-
+    
     /**
-     * 
+     *
      * {@inheritDoc}
      * @see \League\OAuth2\Client\Provider\AbstractProvider::getBaseAccessTokenUrl()
      */
@@ -283,7 +299,7 @@ class Keycloak extends AbstractProvider
      * (Convenience Method) Returns the Keycloak introspection endpoint that can be used to obtain additional information about a token.
      * By default, this client will perform local validation and decoding using the realm's cached public key (retrieved during endpoints autodiscovery) and returns the additional information in the getResourceOwner() response.
      * Using the introspection endpoint performs the validation and decoding on the Keycloak server.
-     * 
+     *
      * @return string
      */
     public function getIntrospectionEndpoint()
@@ -293,7 +309,7 @@ class Keycloak extends AbstractProvider
     
     /**
      * (Convenience Method) Returns the Keycloak logout URL
-     * 
+     *
      * @return string
      */
     public function getEndSessionEndpoint()
@@ -304,7 +320,7 @@ class Keycloak extends AbstractProvider
     /**
      * (Convenience Method) Proxy to getEndSessionEndpoint()
      * @see Keycloak::getEndSessionEndpoint()
-     * 
+     *
      * @return string
      */
     public function getLogoutUrl()
@@ -314,9 +330,9 @@ class Keycloak extends AbstractProvider
     
     /**
      * (Convenience Method) Perform keycloak logout and redirect
-     * Implementions will need to clear application session accordingly. 
-     * 
-     * @param string $redirect_url - Redirect URL after logout. If none is provided, the configured provider 'redirectUrl' will be used 
+     * Implementions will need to clear application session accordingly.
+     *
+     * @param string $redirect_url - Redirect URL after logout. If none is provided, the configured provider 'redirectUrl' will be used
      */
     public function logoutAndRedirect(string $redirect_uri = null)
     {
@@ -326,8 +342,8 @@ class Keycloak extends AbstractProvider
     }
     
     /**
-     * The certificate endpoint returns the public keys enabled by the realm, encoded as a JSON Web Key (JWK). 
-     * Depending on the realm settings there can be one or more keys enabled for verifying tokens. 
+     * The certificate endpoint returns the public keys enabled by the realm, encoded as a JSON Web Key (JWK).
+     * Depending on the realm settings there can be one or more keys enabled for verifying tokens.
      * For more information see the Keycloak Server Administration Guide and the JSON Web Key specification.
      */
     public function getCertificateEndpoint()
@@ -335,4 +351,3 @@ class Keycloak extends AbstractProvider
         return $this->getOIDCEndpoints()->jwks_uri;
     }
 }
-
