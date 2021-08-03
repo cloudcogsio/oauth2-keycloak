@@ -237,7 +237,7 @@ class Keycloak extends AbstractProvider
      */
     protected function createResourceOwner(array $response, AccessTokenInterface $token) : ResourceOwner
     {
-        return new ResourceOwner($response, $token, $this->OIDCEndpoints->getPublicKey());
+        return new ResourceOwner($response, $token, $this->OIDCEndpoints->getPublicKey(), $this->OIDCEndpoints->userinfo_signing_alg_values_supported);
     }
     
     /**

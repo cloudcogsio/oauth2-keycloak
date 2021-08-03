@@ -11,13 +11,13 @@ class ResourceOwner implements ResourceOwnerInterface
 {
     protected $response;
 
-    public function __construct(array $response, AccessTokenInterface $token, $publicKey = null)
+    public function __construct(array $response, AccessTokenInterface $token, $publicKey = null, array $allowed_algs = [])
     {
         $this->response = $response;
         
         if ($publicKey)
         {
-            $this->introspectToken($token, $publicKey);
+            $this->introspectToken($token, $publicKey, $allowed_algs);
         }
     }
 
@@ -61,10 +61,18 @@ class ResourceOwner implements ResourceOwnerInterface
         return $this->response['email'];
     }
     
-    protected function introspectToken(AccessTokenInterface $token, $publicKey)
+    protected function introspectToken(AccessTokenInterface $token, $publicKey, $allowed_algs)
     {
+        $jwt_allowed_algs = [
+            'ES384','ES256', 'HS256', 'HS384', 'HS512', 'RS256', 'RS384', 'RS512'
+        ];
+        
+        $resolved_algs = array_intersect($allowed_algs, $jwt_allowed_algs);
+        
         try {
-            $data = JWT::decode($token->getToken(), JWK::parseKeySet($publicKey),[$publicKey['keys'][0]['alg']]);
+            if (array_search("none", $allowed_algs))
+            
+            $data = JWT::decode($token->getToken(), JWK::parseKeySet($publicKey), $resolved_algs);
             $this->response = array_merge($this->response, (array) $data);
 
         } catch (\Exception $e){
