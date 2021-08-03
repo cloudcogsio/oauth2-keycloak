@@ -239,6 +239,11 @@ class Keycloak extends AbstractProvider
         return new ResourceOwner($response, $token, $this->OIDCEndpoints->getPublicKey());
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \League\OAuth2\Client\Provider\AbstractProvider::getAuthorizationHeaders()
+     */
     protected function getAuthorizationHeaders($token = null)
     {
         return [

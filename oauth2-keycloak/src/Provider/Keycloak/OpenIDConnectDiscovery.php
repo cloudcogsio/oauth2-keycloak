@@ -128,6 +128,18 @@ class OpenIDConnectDiscovery
     }
     
     /**
+     * Clear the Public Key cache
+     * 
+     * @param array $options
+     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\OpenIDConnectDiscovery
+     */
+    public function clearPublicKeyCache(array $options = [])
+    {
+        $this->PublicKeyCacheDriver->clear($options);
+        return $this;
+    }
+    
+    /**
      * 
      * @param string $endpoint
      * @return string | array
