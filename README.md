@@ -1,5 +1,6 @@
 # Keycloak Provider for OAuth 2.0 Client
-![GitHub](https://img.shields.io/github/license/cloudcogsio/oauth2-keycloak) 
+![GitHub](https://img.shields.io/github/license/cloudcogsio/oauth2-keycloak) ![GitHub last commit](https://img.shields.io/github/last-commit/cloudcogsio/oauth2-keycloak)
+
 This package provides Keycloak OAuth 2.0 support for the PHP League's [OAuth 2.0 Client](https://github.com/thephpleague/oauth2-client).
 
 The client uses Keycloak's ```.well-known``` services endpoint to query the OpenID Provider Metadata for autodiscovery of relevant endpoints for authorization, tokens and public keys for token introspection. 
