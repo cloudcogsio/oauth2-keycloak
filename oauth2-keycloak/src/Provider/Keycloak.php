@@ -327,11 +327,12 @@ class Keycloak extends AbstractProvider
      * (Convenience Method) Perform keycloak logout and redirect
      * Implementions will need to clear application session accordingly. 
      * 
-     * @param string $redirect_url
+     * @param string $redirect_url - Redirect URL after logout. If none is provided, the configured provider 'redirectUrl' will be used 
      */
-    public function logoutAndRedirect(string $redirect_url)
+    public function logoutAndRedirect(string $redirect_uri = null)
     {
-        header("Location: ".$this->getLogoutUrl()."?redirect=".$redirect_url);
+        if (is_null($redirect_uri)) $redirect_uri = $this->redirectUri;
+        header("Location: ".$this->getLogoutUrl()."?redirect_uri=".$redirect_uri);
         exit;
     }
     
