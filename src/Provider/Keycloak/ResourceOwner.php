@@ -70,8 +70,6 @@ class ResourceOwner implements ResourceOwnerInterface
         $resolved_algs = array_intersect($allowed_algs, $jwt_allowed_algs);
         
         try {
-            if (array_search("none", $allowed_algs))
-            
             $data = JWT::decode($token->getToken(), JWK::parseKeySet($publicKey), $resolved_algs);
             $this->response = array_merge($this->response, (array) $data);
 
