@@ -196,20 +196,21 @@ try {
 ### OpenID Connect Discovery endpoint
 By default, this client uses the ```.well-known/openid-configuration``` endpoint to discover all other endpoints for the Keycloak server once the ```authServerUrl``` and ```realm``` options are supplied to create the client.
 
-This is handled by the ```\Cloudcogs\OAuth2\Client\Provider\Keycloak\OpenIDConnectDiscovery``` class that is instantiated in the ```\Cloudcogs\OAuth2\Client\Provider\Keycloak``` constructor. 
+This is handled by the ```cloudcogsio\oauth2-openid-connect-discovery``` library. See https://github.com/cloudcogsio/oauth2-openid-connect-discovery
 
-The instance of this class can be accessed by  ```$provider->getOIDCEndpoints()``` and the relevant discovered data can be accessed via class overloading.
 
 ```php
 
 // Get the discovered configurations from the provider instance
+$discovered = $provider->Discovery();
 
-$discovered = $provider->getOIDCEndpoints();
+// Access standard OpenID Connect configuration via supported methods
+$issuer = $discovered->getIssuer();
+$supported_grants = $discovered->getGrantTypesSupported();
+$authorization_endpoint = $discovered->getAuthorizationEndpoint();
 
-// Access via overloading
-$issuer = $discovered->issuer;
-$supported_grants = $discovered->grant_types_supported;
-$authorization_endpoint = $discovered->authorization_endpoint;
+// Or overloading for Keycloak specific configuration
+$check_session_iframe = $discovered->check_session_iframe;
 
 // Cast to string to obtain the raw JSON discovery response
 // All available properties for overloading can be seen in the JSON object.
@@ -221,42 +222,9 @@ $json_string = (string) $discovered;
 During endpoint discovery, the Keycloak realm public key(s) are retrieved and cached locally. This is needed to decode the access token which is then added to the ``` \Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceOwner ``` object as additional values.
 
 #### Caching of Public Keys
-An interface is provided for implementation of a caching mechanism for the retrieved public keys. 
+Caching of JWKs are handled by an instance of ```\Laminas\Cache\Storage\Adapter\FileSystem``` which is installed with ```cloudcogsio\oauth2-openid-connect-discovery```.
 
-*Interface:* 
-``` \Cloudcogs\OAuth2\Client\Provider\Keycloak\PublicKeyCache\PublicKeyCacheInterface ```
-
-The client configuration allows passing an object which implements this interface so developers can handle caching themselves. This is optional, and if no object is configured, the client will use the provided ```\Cloudcogs\OAuth2\Client\Provider\Keycloak\PublicKeyCache\File``` implementation for caching the public keys.
-
-```php
-
-class CustomPublicKeyCacheHandler implements \Cloudcogs\OAuth2\Client\Provider\Keycloak\PublicKeyCache\PublicKeyCacheInterface
-{
-	public function save($JWK, array $options = [])
-	{
-	 // Save the JWK
-	}
-	
-    public function load(array $options = [])
-    {
-	 // Retrieve the JWK 
-	}
-	
-    public function clear(array $options = [])
-    {
-	 // Clear the JWK from cache
-	}
-}
-
-$cacheHandler = new CustomPublicKeyCacheHandler();
-
-$provider = new Keycloak([
-    'config' => 'keycloak.json',
-    'redirectUri' => 'https://example.com/callback-url',
-    'cache_driver' => $cacheHandler
-]);
-
-```
+You can provide your own instance of a ```\Laminas\Cache\Storage\Adapter\*``` to handle storage of the Keycloak realm's public key.
 
 
 ### Token Introspection
@@ -267,7 +235,7 @@ This is performed automatically by the client and requires no additional configu
 #### Token Introspection via Keycloak Server
 All tokens issued by the Keycloak server (accessToken, refreshToken etc.) can be introspected using the Keycloak token introspection endpoint.
 
-The client provides a ``` introspectToken(string $token)``` method to carry out this operation.
+The client provides an ``` introspectToken(string $token)``` method to carry out this operation.
 
 ```php
 

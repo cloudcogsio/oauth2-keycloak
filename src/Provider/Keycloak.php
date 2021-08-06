@@ -13,19 +13,15 @@ namespace Cloudcogs\OAuth2\Client\Provider;
 
 use League\OAuth2\Client\Provider\AbstractProvider;
 use Psr\Http\Message\ResponseInterface;
-use Cloudcogs\OAuth2\Client\Provider\Keycloak\OpenIDConnectDiscovery;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\RequiredOptionMissingException;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceOwner;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\InvalidConfigFileException;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Config;
 use League\OAuth2\Client\Token\AccessTokenInterface;
-use Cloudcogs\OAuth2\Client\Provider\Keycloak\PublicKeyCache\PublicKeyCacheInterface;
-use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\Client;
-use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\TokenIntrospectionException;
+use Cloudcogs\OAuth2\Client\OpenIDConnect\AbstractOIDCProvider;
 
-class Keycloak extends AbstractProvider
+class Keycloak extends AbstractOIDCProvider
 {
     /**
      * 
@@ -74,19 +70,12 @@ class Keycloak extends AbstractProvider
     protected $config;
     
     /**
-     * The composed OpenID Connect Discovery object
-     * 
-     * @var \Cloudcogs\OAuth2\Client\Provider\Keycloak\OpenIDConnectDiscovery 
-     */
-    protected $OIDCEndpoints;
-    
-    /**
      * Minimum required options for the constructor if no keycloak.json configuration file is provided.
      * These are used for autodiscovery of endpoints via the Keycloak well-known endpoint
      * 
      * @var array
      */
-    protected $required = ['authServerUrl','realm'];
+    protected $required = ['authServerUrl','realm',AbstractOIDCProvider::OPTION_PUBLICKEY_CACHE_PROVIDER];
     
     /**
      * Constructs an OAuth 2.0 service provider.
@@ -126,26 +115,10 @@ class Keycloak extends AbstractProvider
             }
         }
         
+        $options[AbstractOIDCProvider::OPTION_WELL_KNOWN_URL] = ((substr($this->authServerUrl,-1) == "/") ? rtrim($this->authServerUrl,"/") : $this->authServerUrl)."/realms/".$this->realm."/.well-known/openid-configuration";
+        $options[AbstractOIDCProvider::OPTION_PUBLICKEY_CACHE_PROVIDER] = (!isset($options[AbstractOIDCProvider::OPTION_PUBLICKEY_CACHE_PROVIDER])) ? '' : $options[AbstractOIDCProvider::OPTION_PUBLICKEY_CACHE_PROVIDER];
+        
         parent::__construct($options, $collaborators);
-        
-        /**
-         * Set or provide a PublicKeyCache driver
-         */
-        if (array_key_exists(self::OPTIONS_KEY_PUBLIC_KEY_CACHE_DRIVER, $options)
-            && ($options[self::OPTIONS_KEY_PUBLIC_KEY_CACHE_DRIVER] instanceof PublicKeyCacheInterface))
-        {
-            $PublicKeyCacheDriver = $options[self::OPTIONS_KEY_PUBLIC_KEY_CACHE_DRIVER];
-        }
-        else
-        {
-            // Default to the File driver and set filename as the realm
-            $PublicKeyCacheDriver = new \Cloudcogs\OAuth2\Client\Provider\Keycloak\PublicKeyCache\File($this->realm);
-        }
-        
-        /**
-         * Run auto-discovery by querying the well-known endpoint.
-         */
-        $this->OpenIDConnectDiscovery($PublicKeyCacheDriver);
     }
     
     /**
@@ -174,27 +147,6 @@ class Keycloak extends AbstractProvider
         }
         
         throw new InvalidConfigFileException($file);
-    }
-    
-    /**
-     * Query the well-known endpoint for Keycloak endpoints and other configuration
-     */
-    protected function OpenIDConnectDiscovery(PublicKeyCacheInterface $driver)
-    {
-        if (!is_null($this->authServerUrl) && !is_null($this->realm))
-        {
-            $this->OIDCEndpoints = new OpenIDConnectDiscovery($this->authServerUrl, $this->realm, $driver);
-        }
-    }
-    
-    /**
-     * Return the OpenIDConnectDiscovery object which can be queried for discovered endpoints and configuration.
-     * 
-     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\OpenIDConnectDiscovery
-     */
-    public function getOIDCEndpoints() : OpenIDConnectDiscovery
-    {
-        return $this->OIDCEndpoints;
     }
 
     /**
@@ -237,7 +189,7 @@ class Keycloak extends AbstractProvider
      */
     protected function createResourceOwner(array $response, AccessTokenInterface $token) : ResourceOwner
     {
-        return new ResourceOwner($response, $token, $this->OIDCEndpoints->getPublicKey(), $this->OIDCEndpoints->userinfo_signing_alg_values_supported);
+        return new ResourceOwner($response, $token, $this);
     }
     
     /**
@@ -259,7 +211,7 @@ class Keycloak extends AbstractProvider
      */
     public function getResourceOwnerDetailsUrl(AccessTokenInterface $token) : string
     {
-        return $this->getOIDCEndpoints()->userinfo_endpoint;
+        return $this->OIDCDiscovery->getUserInfoEndpoint();
     }
     
     /**
@@ -269,7 +221,7 @@ class Keycloak extends AbstractProvider
      */
     public function getBaseAuthorizationUrl() : string
     {
-        return $this->getOIDCEndpoints()->authorization_endpoint;
+        return $this->OIDCDiscovery->getAuthorizationEndpoint();
     }
 
     /**
@@ -279,7 +231,7 @@ class Keycloak extends AbstractProvider
      */
     public function getBaseAccessTokenUrl(array $params) : string
     {
-        return $this->getOIDCEndpoints()->token_endpoint;
+        return $this->OIDCDiscovery->getTokenEndpoint();
     }
     
     /**
@@ -291,7 +243,7 @@ class Keycloak extends AbstractProvider
      */
     public function getIntrospectionEndpoint()
     {
-        return $this->getOIDCEndpoints()->introspection_endpoint;
+        return $this->OIDCDiscovery->getIntrospectionEndpoint();
     }
     
     /**
@@ -301,7 +253,7 @@ class Keycloak extends AbstractProvider
      */
     public function getEndSessionEndpoint()
     {
-        return $this->getOIDCEndpoints()->end_session_endpoint;
+        return $this->OIDCDiscovery->end_session_endpoint;
     }
     
     /**
@@ -335,42 +287,7 @@ class Keycloak extends AbstractProvider
      */
     public function getCertificateEndpoint()
     {
-        return $this->getOIDCEndpoints()->jwks_uri;
-    }
-    
-    /**
-     * Use the keycloak token introspection endpoint to decode a token
-     * This is not required for usual operation but is provided here for convience of decoding tokens. Any token issued by Keycloak can be introspected using this method.
-     * 
-     * The accessToken is automatically decoded locally using the cached public key.
-     * Data is populated in the \Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceOwner class.
-     * 
-     * @param string $token
-     * @throws TokenIntrospectionException
-     * @return mixed
-     */
-    public function introspectToken(string $token)
-    {
-        $HttpRequest = new Request("POST", $this->getIntrospectionEndpoint(), 
-            [
-                'Content-Type' => 'application/x-www-form-urlencoded',
-                'Accept' => 'application/json',
-                
-            ], 
-            "client_id=".urlencode($this->clientId)."&client_secret=".urlencode($this->clientSecret)."&token=".$token
-        );
-        
-        /** @var $HttpResponse \GuzzleHttp\Psr7\Response **/
-        $HttpResponse = (new Client())->sendRequest($HttpRequest);
-        
-        if ($HttpResponse->getStatusCode() == "200")
-        {
-            return json_decode((string) $HttpResponse->getBody());
-        }
-        else
-        {
-            throw new TokenIntrospectionException($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+        return $this->OIDCDiscovery->getJwksUri();
     }
 }
 

@@ -21,7 +21,6 @@
 		}
 	},
 	"require" : {
-		"league/oauth2-client" : "~2.6.0",
-		"firebase/php-jwt" : "~5.4.0"
+		"cloudcogsio/oauth2-openid-connect-discovery" : "dev-master"
 	}
 }
