@@ -203,36 +203,6 @@ class Keycloak extends AbstractOIDCProvider
             'Authorization' => "Bearer $token"
         ];
     }
-
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \League\OAuth2\Client\Provider\AbstractProvider::getResourceOwnerDetailsUrl()
-     */
-    public function getResourceOwnerDetailsUrl(AccessTokenInterface $token) : string
-    {
-        return $this->OIDCDiscovery->getUserInfoEndpoint();
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \League\OAuth2\Client\Provider\AbstractProvider::getBaseAuthorizationUrl()
-     */
-    public function getBaseAuthorizationUrl() : string
-    {
-        return $this->OIDCDiscovery->getAuthorizationEndpoint();
-    }
-
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \League\OAuth2\Client\Provider\AbstractProvider::getBaseAccessTokenUrl()
-     */
-    public function getBaseAccessTokenUrl(array $params) : string
-    {
-        return $this->OIDCDiscovery->getTokenEndpoint();
-    }
     
     /**
      * (Convenience Method) Returns the Keycloak introspection endpoint that can be used to obtain additional information about a token.
