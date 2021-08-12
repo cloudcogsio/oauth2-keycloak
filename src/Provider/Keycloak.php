@@ -75,7 +75,7 @@ class Keycloak extends AbstractOIDCProvider
      * 
      * @var array
      */
-    protected $required = ['authServerUrl','realm',AbstractOIDCProvider::OPTION_PUBLICKEY_CACHE_PROVIDER];
+    protected $required = ['authServerUrl','realm'];
     
     /**
      * Constructs an OAuth 2.0 service provider.
@@ -112,6 +112,9 @@ class Keycloak extends AbstractOIDCProvider
             foreach ($this->required as $param)
             {
                 if (!array_key_exists($param, $options)) throw new RequiredOptionMissingException($param);
+                
+                // We need to set the required options if passed since they are used before the parent constructor is called.
+                $this->$param = $options[$param];
             }
         }
         
@@ -124,29 +127,37 @@ class Keycloak extends AbstractOIDCProvider
     /**
      * Loads a 'keycloak.json file' containing the configuration required for interaction with the keycloak server.
      * 
-     * @param string $file Full path and filename of the configuration file
+     * @param string | array $config - Full path and filename of the configuration file or array representation of keycloak.json settings. 
      * @throws InvalidConfigFileException
      * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak
      */
-    public function loadKeycloakConfig($file)
+    public function loadKeycloakConfig($config)
     {
-        if (file_exists($file))
+        if (is_array($config))
         {
-            $json = json_decode(file_get_contents($file),JSON_OBJECT_AS_ARRAY);
-            if (is_array($json))
+            $json = $config;
+        }
+        else
+        {
+            if (file_exists($config))
             {
-                $this->config = new Config($json);
-                
-                $this->realm = $this->config->getRealm();
-                $this->authServerUrl = $this->config->getAuthServerUrl();
-                $this->clientId = $this->config->getClientId();
-                $this->clientSecret = $this->config->getClientSecret();
-                
-                return $this;
+                $json = json_decode(file_get_contents($config),JSON_OBJECT_AS_ARRAY);
             }
         }
         
-        throw new InvalidConfigFileException($file);
+        if (is_array($json))
+        {
+            $this->config = new Config($json);
+            
+            $this->realm = $this->config->getRealm();
+            $this->authServerUrl = $this->config->getAuthServerUrl();
+            $this->clientId = $this->config->getClientId();
+            $this->clientSecret = $this->config->getClientSecret();
+            
+            return $this;
+        }
+        
+        throw new InvalidConfigFileException($config);
     }
 
     /**
