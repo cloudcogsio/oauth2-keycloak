@@ -12,7 +12,16 @@ class ResourceOwner implements ResourceOwnerInterface
 
     public function __construct(array $response, AccessTokenInterface $token, AbstractOIDCProvider $Provider)
     {
-        $this->response = array_merge($response,(array) $Provider->introspectToken($token->getToken()));
+        $parsedToken = $Provider->introspectToken($token->getToken());
+        
+        if ($parsedToken instanceof \Cloudcogs\OAuth2\Client\OpenIDConnect\ParsedToken)
+        {
+            $this->response = array_merge($response, $parsedToken->toArray());
+        }
+        else
+        {
+            $this->response = $response;
+        }
     }
 
     public function toArray()
