@@ -21,6 +21,7 @@
 		}
 	},
 	"require" : {
-		"cloudcogsio/oauth2-openid-connect-discovery" : "dev-master"
+		"cloudcogsio/oauth2-openid-connect-discovery" : "dev-master",
+		"laminas/laminas-http" : "~2.14.3"
 	}
 }
