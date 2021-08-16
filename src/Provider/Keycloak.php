@@ -20,6 +20,12 @@ use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\InvalidConfigFileExcepti
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Config;
 use League\OAuth2\Client\Token\AccessTokenInterface;
 use Cloudcogs\OAuth2\Client\OpenIDConnect\AbstractOIDCProvider;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyTokenRequest;
+use Laminas\Http\Client;
+use Laminas\Http\Client\Adapter\Curl;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\AuthorizationTokenException;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyToken;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyTokenResponse;
 
 class Keycloak extends AbstractOIDCProvider
 {
@@ -189,7 +195,7 @@ class Keycloak extends AbstractOIDCProvider
     {
         if (array_key_exists('error', $data))
         {
-            throw new IdentityProviderException(@$data['error']." [".@$data['error_response']."]", $response->getStatusCode(), $data);
+            throw new IdentityProviderException(@$data['error']." [".@$data['error_description']."]", $response->getStatusCode(), $data);
         }
     }
 
@@ -197,6 +203,8 @@ class Keycloak extends AbstractOIDCProvider
      * 
      * {@inheritDoc}
      * @see \League\OAuth2\Client\Provider\AbstractProvider::createResourceOwner()
+     *
+     * @return ResourceOwner
      */
     protected function createResourceOwner(array $response, AccessTokenInterface $token) : ResourceOwner
     {
@@ -207,6 +215,8 @@ class Keycloak extends AbstractOIDCProvider
      * 
      * {@inheritDoc}
      * @see \League\OAuth2\Client\Provider\AbstractProvider::getAuthorizationHeaders()
+     *
+     * @return array
      */
     protected function getAuthorizationHeaders($token = null)
     {
@@ -265,10 +275,55 @@ class Keycloak extends AbstractOIDCProvider
      * The certificate endpoint returns the public keys enabled by the realm, encoded as a JSON Web Key (JWK). 
      * Depending on the realm settings there can be one or more keys enabled for verifying tokens. 
      * For more information see the Keycloak Server Administration Guide and the JSON Web Key specification.
+     * 
+     * @return string
      */
     public function getCertificateEndpoint()
     {
         return $this->OIDCDiscovery->getJwksUri();
+    }
+    
+    /**
+     * For Keycloak clients that are configured for Authorization, this method retrieves a token from Keycloak that contains the resource permissions for the user.
+     * Additional features are also effected based on the RequestingPartyTokenRequest that is passed to this method.
+     *
+     * @see \Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyTokenRequest
+     * @see https://www.keycloak.org/docs/latest/authorization_services/#_service_rpt_overview
+     *
+     * @param RequestingPartyTokenRequest $Request
+     * @throws IdentityProviderException
+     * @throws AuthorizationTokenException
+     *
+     * @return \League\OAuth2\Client\Token\AccessTokenInterface
+     */
+    public function getAuthorizationToken(RequestingPartyTokenRequest $Request) : RequestingPartyTokenResponse
+    {
+        $Client = new Client(null,[
+            'adapter'     => Curl::class,
+            'curloptions' => [
+                CURLOPT_RETURNTRANSFER => true,
+            ]
+        ]);
+        
+        $Response = $Client->send($Request);
+        
+        $AccessToken = json_decode((string) $Response->getBody(), true);
+        
+        if (is_array($AccessToken))
+        {
+            switch ($Response->getStatusCode())
+            {
+                case "200":
+                    return new RequestingPartyTokenResponse($this, new RequestingPartyToken($AccessToken));
+                    break;
+                    
+                default:
+                    throw new IdentityProviderException(@$AccessToken['error']." [".@$AccessToken['error_description']."]", $Response->getStatusCode(), $AccessToken);
+                    break;
+            }
+        }
+        
+        throw new AuthorizationTokenException();
     }
 }
 

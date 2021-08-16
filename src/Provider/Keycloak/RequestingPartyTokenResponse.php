@@ -20,6 +20,11 @@ class RequestingPartyTokenResponse extends Response
         $this->ParsedToken = $Keycloak->introspectToken($RequestingPartyToken->getToken());
     }
     
+    public function getRPT() : RequestingPartyToken
+    {
+        return $this->RPT;
+    }
+    
     public function getParsedToken() : ParsedToken
     {
         return $this->ParsedToken;
