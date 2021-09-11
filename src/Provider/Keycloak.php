@@ -41,15 +41,6 @@ class Keycloak extends AbstractOIDCProvider
     const OPTIONS_KEY_CONFIG = "config";
     
     /**
-     * Key used in the $options array for passing in an object implementing the \Cloudcogs\OAuth2\Client\Provider\Keycloak\PublicKeyCache\PublicKeyCacheInterface
-     * This is used to cache the keycloak realm public key.
-     * 
-     * If not provided, the builtin 'file' driver will be used.
-     * @see \Cloudcogs\OAuth2\Client\Provider\Keycloak\PublicKeyCache\File
-     */
-    const OPTIONS_KEY_PUBLIC_KEY_CACHE_DRIVER = "cache_driver";
-    
-    /**
      * The Keycloak base URL
      * @example http://localhost:8080/auth
      *
