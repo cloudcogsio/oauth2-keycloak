@@ -46,8 +46,8 @@ class RequestingPartyTokenRequest extends Request
      */
     public function setClaimToken(ClaimToken $ClaimToken)
     {
-        $this->getPost()->get('claim_token_format', $ClaimToken::FORMAT);
-        $this->getPost()->get('claim_token', $ClaimToken->__toString());
+        $this->getPost()->set('claim_token_format', $ClaimToken::FORMAT);
+        $this->getPost()->set('claim_token', $ClaimToken->__toString());
         
         return $this;
     }
@@ -119,7 +119,7 @@ class RequestingPartyTokenRequest extends Request
      */
     public function includeResourceNameInResponse(bool $bool = true)
     {
-        $this->getPost()->set('response_include_resource_name', $bool);
+        $this->getPost()->set('response_include_resource_name', ($bool) ? "true" : "false");
         return $this;
     }
     
@@ -149,7 +149,7 @@ class RequestingPartyTokenRequest extends Request
      */
     public function submitUMARequest(bool $bool = true)
     {
-        $this->getPost()->set('submit_request', $bool);
+        $this->getPost()->set('submit_request', ($bool) ? "true" : "false"); // PHP passes the bool as 1 but KC expects true.
         return $this;
     }
     
