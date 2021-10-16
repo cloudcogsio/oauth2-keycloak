@@ -26,6 +26,8 @@ use Laminas\Http\Client\Adapter\Curl;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\AuthorizationTokenException;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyToken;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyTokenResponse;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceManagement;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\PermissionManagement;
 
 class Keycloak extends AbstractOIDCProvider
 {
@@ -90,6 +92,13 @@ class Keycloak extends AbstractOIDCProvider
      *     
      * @throws RequiredOptionMissingException
      */
+    
+    /** @var \Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceManagement **/
+    protected $ResourceManagement;
+    
+    /** @var \Cloudcogs\OAuth2\Client\Provider\Keycloak\PermissionManagement **/
+    protected $PermissionManagement;
+    
     public function __construct(array $options = [], array $collaborators = [])
     {
         /**
@@ -315,6 +324,68 @@ class Keycloak extends AbstractOIDCProvider
         }
         
         throw new AuthorizationTokenException();
+    }
+
+    /**
+     * Proxy to Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceManagement
+     * 
+     * @param object $WellKnownUMA2Configuration - Previously retrieved UMA well-known config. If empty, autodiscovery is performed.
+     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceManagement
+     */
+    public function ResourceManagement($WellKnownUMA2Configuration = null) : ResourceManagement
+    {
+        if (!$this->ResourceManagement)
+        {
+            $uma2_url = ((substr($this->authServerUrl,-1) == "/") ? rtrim($this->authServerUrl,"/") : $this->authServerUrl)."/realms/".$this->realm."/.well-known/uma2-configuration";
+            
+            if ($WellKnownUMA2Configuration == null)
+            {
+                $resource_registration_endpoint = "";
+            }
+            else {
+                $resource_registration_endpoint = $WellKnownUMA2Configuration->resource_registration_endpoint;
+            }
+            
+            $this->ResourceManagement = new ResourceManagement($this, $uma2_url, (empty($resource_registration_endpoint)) ? true : false);
+            
+            if ($WellKnownUMA2Configuration)
+            {
+                $this->ResourceManagement->setWellKnownConfiguration($WellKnownUMA2Configuration);
+            }
+        }
+        
+        return $this->ResourceManagement;
+    }
+    
+    /**
+     * Proxy to Cloudcogs\OAuth2\Client\Provider\Keycloak\PermissionManagement
+     * 
+     * @param object $WellKnownUMA2Configuration - Previously retrieved UMA well-known config. If empty, autodiscovery is performed.
+     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\PermissionManagement
+     */
+    public function PermissionManagement($WellKnownUMA2Configuration = null) : PermissionManagement
+    {
+        if (!$this->PermissionManagement)
+        {
+            $uma2_url = ((substr($this->authServerUrl,-1) == "/") ? rtrim($this->authServerUrl,"/") : $this->authServerUrl)."/realms/".$this->realm."/.well-known/uma2-configuration";
+            
+            if ($WellKnownUMA2Configuration == null)
+            {
+                $permission_endpoint = "";
+            }
+            else {
+                $permission_endpoint = $WellKnownUMA2Configuration->permission_endpoint;
+            }
+            
+            $this->PermissionManagement = new PermissionManagement($this, $uma2_url, (empty($permission_endpoint)) ? true : false);
+            
+            if ($WellKnownUMA2Configuration)
+            {
+                $this->PermissionManagement->setWellKnownConfiguration($WellKnownUMA2Configuration);
+            }
+        }
+        
+        return $this->PermissionManagement;
     }
 }
 
