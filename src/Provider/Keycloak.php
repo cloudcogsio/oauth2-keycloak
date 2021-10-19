@@ -28,6 +28,8 @@ use Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyToken;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyTokenResponse;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceManagement;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\PermissionManagement;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\Grants\TokenExchange;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\PolicyManagement;
 
 class Keycloak extends AbstractOIDCProvider
 {
@@ -98,6 +100,9 @@ class Keycloak extends AbstractOIDCProvider
     
     /** @var \Cloudcogs\OAuth2\Client\Provider\Keycloak\PermissionManagement **/
     protected $PermissionManagement;
+    
+    /** @var \Cloudcogs\OAuth2\Client\Provider\Keycloak\PolicyManagement **/
+    protected $PolicyManagement;
     
     public function __construct(array $options = [], array $collaborators = [])
     {
@@ -327,6 +332,25 @@ class Keycloak extends AbstractOIDCProvider
     }
 
     /**
+     * Exchange a token issued by another client
+     * 
+     * @see https://www.keycloak.org/docs/latest/securing_apps/#_token-exchange
+     * 
+     * @param string $ClientAccessToken - Bearer Token issued by another client
+     * @param string $requested_token_type -  If your requested_token_type parameter is a refresh token type, then the response will contain both an access token, refresh token, and expiration.
+     * @return AccessTokenInterface
+     */
+    public function tokenExchange(string $ClientAccessToken, string $requested_token_type = TokenExchange::REQUESTED_TOKEN_TYPE_ACCESS) : AccessTokenInterface
+    {
+        $TokenExchangeGrant = new TokenExchange();
+        return $this->getAccessToken($TokenExchangeGrant, [
+            'subject_token' => $ClientAccessToken,
+            'audience' => $this->clientId,
+            'requested_token_type' => $requested_token_type
+        ]);
+    }
+
+    /**
      * Proxy to Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceManagement
      * 
      * @param object $WellKnownUMA2Configuration - Previously retrieved UMA well-known config. If empty, autodiscovery is performed.
@@ -386,6 +410,38 @@ class Keycloak extends AbstractOIDCProvider
         }
         
         return $this->PermissionManagement;
+    }
+    
+    /**
+     * Proxy to Cloudcogs\OAuth2\Client\Provider\Keycloak\PolicyManagement
+     * 
+     * @param object $WellKnownUMA2Configuration - Previously retrieved UMA well-known config. If empty, autodiscovery is performed.
+     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\PolicyManagement
+     */
+    public function PolicyManagement(string $ClientAccessToken, $WellKnownUMA2Configuration = null) : PolicyManagement
+    {
+        if (!$this->PolicyManagement)
+        {
+            $uma2_url = ((substr($this->authServerUrl,-1) == "/") ? rtrim($this->authServerUrl,"/") : $this->authServerUrl)."/realms/".$this->realm."/.well-known/uma2-configuration";
+            
+            if ($WellKnownUMA2Configuration == null)
+            {
+                $policy_endpoint = "";
+            }
+            else {
+                $policy_endpoint = $WellKnownUMA2Configuration->policy_endpoint;
+            }
+            
+            $this->PolicyManagement = new PolicyManagement($this, $uma2_url, (empty($policy_endpoint)) ? true : false);
+            $this->PolicyManagement->setUMAPolicyAccessToken($this->tokenExchange($ClientAccessToken));
+            
+            if ($WellKnownUMA2Configuration)
+            {
+                $this->PolicyManagement->setWellKnownConfiguration($WellKnownUMA2Configuration);
+            }
+        }
+        
+        return $this->PolicyManagement;
     }
 }
 

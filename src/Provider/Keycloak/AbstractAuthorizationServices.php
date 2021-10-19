@@ -14,6 +14,7 @@ namespace Cloudcogs\OAuth2\Client\Provider\Keycloak;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use Cloudcogs\OAuth2\Client\OpenIDConnect\Exception\InvalidUrlException;
 use Cloudcogs\OAuth2\Client\OpenIDConnect\Exception\WellKnownEndpointException;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak;
 
 abstract class AbstractAuthorizationServices
 {
@@ -23,7 +24,7 @@ abstract class AbstractAuthorizationServices
     
     protected $Keycloak;
     
-    public function __construct(AbstractProvider $Keycloak, string $oidc_well_known_url, bool $discover = false)
+    public function __construct(Keycloak $Keycloak, string $oidc_well_known_url, bool $discover = false)
     {
         $this->uma2_well_known_url = str_replace("openid", "uma2", $oidc_well_known_url);
         $this->Keycloak = $Keycloak;
