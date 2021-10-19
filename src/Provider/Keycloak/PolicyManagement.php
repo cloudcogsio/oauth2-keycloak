@@ -38,6 +38,9 @@ class PolicyManagement extends AbstractAuthorizationServices
             
             return $list;
         }
+        elseif($HttpResponse->getStatusCode() == "204") {
+            return [];
+        } 
         else {
             throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
         }
