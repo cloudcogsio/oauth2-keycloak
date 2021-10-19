@@ -296,12 +296,13 @@ class Keycloak extends AbstractOIDCProvider
      * @see https://www.keycloak.org/docs/latest/authorization_services/#_service_rpt_overview
      *
      * @param RequestingPartyTokenRequest $Request
+     * @param bool $useTokenHint - Indicates if the RPT should contain mainly the "permissions" (true) claim or the full UMA token (false). 
      * @throws IdentityProviderException
      * @throws AuthorizationTokenException
      *
      * @return \League\OAuth2\Client\Token\AccessTokenInterface
      */
-    public function getAuthorizationToken(RequestingPartyTokenRequest $Request) : RequestingPartyTokenResponse
+    public function getAuthorizationToken(RequestingPartyTokenRequest $Request, bool $useTokenHint = true) : RequestingPartyTokenResponse
     {
         $Client = new Client(null,[
             'adapter'     => Curl::class,
@@ -319,7 +320,7 @@ class Keycloak extends AbstractOIDCProvider
             switch ($Response->getStatusCode())
             {
                 case "200":
-                    return new RequestingPartyTokenResponse($this, new RequestingPartyToken($AccessToken));
+                    return new RequestingPartyTokenResponse($this, new RequestingPartyToken($AccessToken), $useTokenHint);
                     break;
                     
                 default:

@@ -8,16 +8,27 @@ use Cloudcogs\OAuth2\Client\OpenIDConnect\ParsedToken;
 
 class RequestingPartyTokenResponse extends Response
 {
+    CONST PARAM_TOKEN_TYPE_HINT = "token_type_hint";
+    CONST TOKEN_TYPE_RPT = "requesting_party_token";
+    
     protected $RPT;
     protected $Keycloak;
     protected $ParsedToken;
     
-    public function __construct(Keycloak $Keycloak, RequestingPartyToken $RequestingPartyToken)
+    public function __construct(Keycloak $Keycloak, RequestingPartyToken $RequestingPartyToken, bool $useTokenHint = true)
     {
         $this->Keycloak = $Keycloak;
         $this->RPT = $RequestingPartyToken;
         
-        $this->ParsedToken = $Keycloak->introspectToken($RequestingPartyToken->getToken());
+        if ($useTokenHint)
+        {
+            $this->ParsedToken = $Keycloak->introspectToken($RequestingPartyToken->getToken(), [
+                self::PARAM_TOKEN_TYPE_HINT => self::TOKEN_TYPE_RPT
+            ], false);
+        } 
+        else {
+            $this->ParsedToken = $Keycloak->introspectToken($RequestingPartyToken->getToken());
+        }
     }
     
     public function getRPT() : RequestingPartyToken
@@ -32,6 +43,6 @@ class RequestingPartyTokenResponse extends Response
     
     public function getPermissions()
     {
-        return $this->getParsedToken()->authorization->permissions;
+        return $this->getParsedToken()->permissions;
     }
 }
