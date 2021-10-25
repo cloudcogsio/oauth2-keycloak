@@ -30,6 +30,8 @@ use Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceManagement;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\PermissionManagement;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Grants\TokenExchange;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\PolicyManagement;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\ClientFactory;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\Resources\AbstractApiResource;
 
 class Keycloak extends AbstractOIDCProvider
 {
@@ -51,6 +53,12 @@ class Keycloak extends AbstractOIDCProvider
      * @var string
      */
     protected $authServerUrl;
+    
+    /**
+     * Auto-generated - Admin API base url for the admin API endpoints
+     * @var string
+     */
+    protected $adminApiBaseUrl;
     
     /**
      * The Keycloak realm
@@ -131,6 +139,8 @@ class Keycloak extends AbstractOIDCProvider
         
         $options[AbstractOIDCProvider::OPTION_WELL_KNOWN_URL] = ((substr($this->authServerUrl,-1) == "/") ? rtrim($this->authServerUrl,"/") : $this->authServerUrl)."/realms/".$this->realm."/.well-known/openid-configuration";
         $options[AbstractOIDCProvider::OPTION_PUBLICKEY_CACHE_PROVIDER] = (!isset($options[AbstractOIDCProvider::OPTION_PUBLICKEY_CACHE_PROVIDER])) ? '' : $options[AbstractOIDCProvider::OPTION_PUBLICKEY_CACHE_PROVIDER];
+        
+        $this->adminApiBaseUrl = ((substr($this->authServerUrl,-1) == "/") ? rtrim($this->authServerUrl,"/") : $this->authServerUrl)."/admin/realms/".$this->realm."/";
         
         parent::__construct($options, $collaborators);
     }
@@ -443,6 +453,23 @@ class Keycloak extends AbstractOIDCProvider
         }
         
         return $this->PolicyManagement;
+    }
+    
+    /**
+     * Returns an instance of the specified resource Api.
+     * Resources can be one of the RESOURCE_* constants defined in \Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\ClientFactory
+     * 
+     * @param string $Resource
+     * @return AbstractApiResource
+     */
+    public function AdminApiClientFactory(string $Resource) : AbstractApiResource
+    {
+        return (new ClientFactory())($this, $Resource);
+    }
+    
+    public function getAdminApiBaseUrl()
+    {
+        return $this->adminApiBaseUrl;
     }
 }
 
