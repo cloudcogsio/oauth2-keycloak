@@ -22,6 +22,7 @@ class Resource
     const URIS = "uris";
     const SCOPES = "scopes";
     const ID = "_id";
+    const ATTRIBUTES = "attributes";
     
     private $config = [
         self::NAME => null,
@@ -37,7 +38,31 @@ class Resource
     
     public function __construct(array $config = [])
     {
-        $this->config = array_intersect_key($config, $this->config);
+        foreach ($config as $param => $value)
+        {
+            switch ($param)
+            {
+                case self::OWNER:
+                    if (is_object($value)) $value = $value->id;
+                    break;
+                    
+                case self::SCOPES:
+                case self::RESOURCE_SCOPES:
+                    if (is_array($value))
+                    {
+                        foreach ($value as $i=>$scope)
+                        {
+                            if (is_object($scope))
+                            {
+                                $value[$i] = $scope->name;
+                            }
+                        }
+                    }
+                    break;
+            }
+            
+            $this->config[$param] = $value;
+        }
     }
     
     public function setName(string $name)
@@ -73,12 +98,12 @@ class Resource
         return @$this->config[self::ICON_URI];
     }
     
-    public function setResourceScopes(array $resourceScopes)
+    public function setResourceScopes(array $resourceScopes, $merge = false)
     {
-        if(is_array(@$this->config[self::RESOURCE_SCOPES]))
+        if($merge && is_array(@$this->config[self::RESOURCE_SCOPES]))
         {
             $this->config[self::RESOURCE_SCOPES] = array_merge($this->config[self::RESOURCE_SCOPES], $resourceScopes);
-        } 
+        }
         else {
             $this->config[self::RESOURCE_SCOPES] = $resourceScopes;
         }
@@ -158,6 +183,15 @@ class Resource
     
     public function __toString()
     {
+        if (array_key_exists(self::ATTRIBUTES, $this->config) && empty((array) $this->config[self::ATTRIBUTES]))
+        {
+            unset($this->config[self::ATTRIBUTES]);
+        }
+        
+        if(array_key_exists(self::ID, $this->config)) unset($this->config[self::ID]);
+        if(array_key_exists(self::SCOPES, $this->config)) unset($this->config[self::SCOPES]);
+        ($this->config[self::OWNER_MANAGED_ACCESS] == 1) ? $this->config[self::OWNER_MANAGED_ACCESS] = "true" : $this->config[self::OWNER_MANAGED_ACCESS] = "false";
+        
         return json_encode($this->config);
     }
 }

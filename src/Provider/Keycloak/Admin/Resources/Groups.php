@@ -3,6 +3,7 @@ namespace Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\Resources;
 
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\Definitions\GroupRepresentation;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\ClientFactory;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\ApiGroupNotFoundException;
 
 class Groups extends AbstractApiResource
 {    
@@ -158,13 +159,32 @@ class Groups extends AbstractApiResource
         if ($HttpResponse->getStatusCode() == "201")
         {
             $newGroup = $this->getGroups([Groups::PARAM_BRIEF_REPRESENTATION => false, Groups::PARAM_SEARCH => $ChildGroup->getName()]);
-            if (is_array($newGroup) && count($newGroup) === 1) return $newGroup[0];
+            if (is_array($newGroup)) 
+            {        
+                $createdGroup = $this->recursiveSearchByName($ChildGroup->getName(), $newGroup);
+                if ($createdGroup instanceof GroupRepresentation) return $createdGroup;
+            }
             
-            return true;
+            throw new ApiGroupNotFoundException();
         }
         else {
             throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
         }
+    }
+    
+    public function recursiveSearchByName(string $name, array $Groups)
+    {
+        foreach ($Groups as $group)
+        {
+            if (is_array($group->getSubGroups())) {
+                $subGroup = $this->recursiveSearchByName($name, $group->getSubGroups());
+                if ($subGroup instanceof GroupRepresentation) return $subGroup;
+            }
+            
+            if ($group->getName() == $name) return $group;
+        }
+        
+        return null;
     }
     
     public function getMembers(GroupRepresentation $Group, array $params = []) : array
