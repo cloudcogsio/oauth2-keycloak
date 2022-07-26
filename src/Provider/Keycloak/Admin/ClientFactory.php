@@ -10,13 +10,20 @@ class ClientFactory
     const RESOURCE_GROUPS = "Groups";
     const RESOURCE_USERS = "Users";
     
-    protected $validatedResources;
+    protected array $validatedResources;
     
-    protected $endpoints = [
+    protected array $endpoints = [
         self::RESOURCE_GROUPS => "groups",
         self::RESOURCE_USERS => "users"
     ];
-    
+
+    /**
+     * @param Keycloak $Keycloak
+     * @param string $Resource
+     * @return mixed
+     * @throws ApiResourceException
+     * @throws ApiResourceNotFoundException
+     */
     function __invoke(Keycloak $Keycloak, string $Resource)
     {        
         $this->validateResource($Resource);
@@ -29,10 +36,15 @@ class ClientFactory
         
         throw new ApiResourceNotFoundException($Resource);
     }
-    
+
+    /**
+     * @param $Resource
+     * @return void
+     * @throws ApiResourceException
+     */
     private function validateResource($Resource)
     {
-        if (!$this->validatedResources)
+        if (!isset($this->validatedResources))
         {
             $self = new \ReflectionClass($this);
             $this->validatedResources = array_flip($self->getConstants());

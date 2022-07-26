@@ -25,9 +25,9 @@ class RequestingPartyTokenRequest extends Request
      * The most recent permission ticket received by the client as part of the UMA authorization process.
      *
      * @param string $ticket
-     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyTokenRequest
+     * @return RequestingPartyTokenRequest
      */
-    public function setTicket(string $ticket)
+    public function setTicket(string $ticket): RequestingPartyTokenRequest
     {
         $this->getPost()->set('ticket', $ticket);
         return $this;
@@ -42,9 +42,9 @@ class RequestingPartyTokenRequest extends Request
      * @see https://www.keycloak.org/docs/latest/authorization_services/
      *
      * @param ClaimToken $ClaimToken
-     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyTokenRequest
+     * @return RequestingPartyTokenRequest
      */
-    public function setClaimToken(ClaimToken $ClaimToken)
+    public function setClaimToken(ClaimToken $ClaimToken): RequestingPartyTokenRequest
     {
         $this->getPost()->set('claim_token_format', $ClaimToken::FORMAT);
         $this->getPost()->set('claim_token', $ClaimToken->__toString());
@@ -59,9 +59,9 @@ class RequestingPartyTokenRequest extends Request
      * This parameter allows clients in possession of an RPT to perform incremental authorization where permissions are added on demand.
      *
      * @param string $rpt
-     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyTokenRequest
+     * @return RequestingPartyTokenRequest
      */
-    public function setRpt(string $rpt)
+    public function setRpt(string $rpt): RequestingPartyTokenRequest
     {
         $this->getPost()->set('rpt', $rpt);
         return $this;
@@ -79,9 +79,9 @@ class RequestingPartyTokenRequest extends Request
      * For instance: Resource A#Scope A, Resource A#Scope A, Scope B, Scope C, Resource A, #Scope A.
      *
      * @param string $permission
-     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyTokenRequest
+     * @return RequestingPartyTokenRequest
      */
-    public function addPermission(string $permission)
+    public function addPermission(string $permission): RequestingPartyTokenRequest
     {
         $permission = $this->getPost('permission');
         if(!is_array($permission))
@@ -100,9 +100,9 @@ class RequestingPartyTokenRequest extends Request
      * It serves as a hint to Keycloak to indicate the context in which permissions should be evaluated.
      *
      * @param string $audience
-     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyTokenRequest
+     * @return RequestingPartyTokenRequest
      */
-    public function setAudience(string $audience)
+    public function setAudience(string $audience): RequestingPartyTokenRequest
     {
         $this->getPost()->set('audience', $audience);
         return $this;
@@ -115,9 +115,9 @@ class RequestingPartyTokenRequest extends Request
      * If false, only the resource identifier is included.
      *
      * @param bool $bool
-     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyTokenRequest
+     * @return RequestingPartyTokenRequest
      */
-    public function includeResourceNameInResponse(bool $bool = true)
+    public function includeResourceNameInResponse(bool $bool = true): RequestingPartyTokenRequest
     {
         $this->getPost()->set('response_include_resource_name', ($bool) ? "true" : "false");
         return $this;
@@ -130,9 +130,9 @@ class RequestingPartyTokenRequest extends Request
      * When used together with rpt parameter, only the last N requested permissions will be kept in the RPT.
      *
      * @param int $limit
-     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyTokenRequest
+     * @return RequestingPartyTokenRequest
      */
-    public function setPermissionsLimit(int $limit)
+    public function setPermissionsLimit(int $limit): RequestingPartyTokenRequest
     {
         $this->getPost()->set('response_permissions_limit', $limit);
         return $this;
@@ -145,9 +145,9 @@ class RequestingPartyTokenRequest extends Request
      * This parameter only has effect if used together with the ticket parameter as part of a UMA authorization process.
      *
      * @param bool $bool
-     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyTokenRequest
+     * @return RequestingPartyTokenRequest
      */
-    public function submitUMARequest(bool $bool = true)
+    public function submitUMARequest(bool $bool = true): RequestingPartyTokenRequest
     {
         $this->getPost()->set('submit_request', ($bool) ? "true" : "false"); // PHP passes the bool as 1 but KC expects true.
         return $this;
@@ -177,9 +177,9 @@ class RequestingPartyTokenRequest extends Request
      *       ]
      *
      * @param string $mode
-     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyTokenRequest
+     * @return RequestingPartyTokenRequest
      */
-    public function setResponseMode(string $mode = "decision")
+    public function setResponseMode(string $mode = "decision"): RequestingPartyTokenRequest
     {
         $this->getPost()->set('response_mode', $mode);
         return $this;

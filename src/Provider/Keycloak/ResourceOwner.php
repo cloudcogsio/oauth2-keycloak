@@ -8,7 +8,7 @@ use Cloudcogs\OAuth2\Client\OpenIDConnect\AbstractOIDCProvider;
 
 class ResourceOwner implements ResourceOwnerInterface
 {
-    protected $response;
+    protected array $response;
 
     public function __construct(array $response, AccessTokenInterface $token, AbstractOIDCProvider $Provider)
     {
@@ -24,7 +24,7 @@ class ResourceOwner implements ResourceOwnerInterface
         }
     }
 
-    public function toArray()
+    public function toArray(): array
     {
         return $this->response;
     }

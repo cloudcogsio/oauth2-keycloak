@@ -13,51 +13,51 @@ class Config
     const CONFIG_KEY_CONFIDENTIALPORT = 'confidential-port';
     const CONFIG_KEY_POLICYENFORCER = 'policy-enforcer';
     
-    protected $config;
+    protected array $config;
     
     public function __construct(array $config)
     {
         $this->config = $config;
     }
     
-    public function getRealm()
+    public function getRealm() : string
     {
         return @$this->config[self::CONFIG_KEY_REALM];
     }
     
-    public function getAuthServerUrl()
+    public function getAuthServerUrl() : string
     {
         return @$this->config[self::CONFIG_KEY_AUTHSERVERURL];
     }
     
-    public function getSslRequired()
+    public function getSslRequired() : string
     {
         return @$this->config[self::CONFIG_KEY_SSLREQUIRED];
     }
     
-    public function getClientId()
+    public function getClientId() : string
     {
         return @$this->config[self::CONFIG_KEY_RESOURCE];
     }
     
-    public function getClientSecret()
+    public function getClientSecret() : string
     {
-        $credentials = (array) $this->getCredentials();
+        $credentials = $this->getCredentials();
         return @$credentials[self::CONFIG_KEY_SECRET];
     }
     
-    public function getCredentials()
+    public function getCredentials() : array
     {
-        return @$this->config[self::CONFIG_KEY_CREDENTIALS];
+        return (array) @$this->config[self::CONFIG_KEY_CREDENTIALS];
     }
     
-    public function getConfidentialPort()
+    public function getConfidentialPort() : int
     {
-        return @$this->config[self::CONFIG_KEY_CONFIDENTIALPORT];
+        return intval(@$this->config[self::CONFIG_KEY_CONFIDENTIALPORT]);
     }
     
-    public function getPolicyEnforcer()
+    public function getPolicyEnforcer() : array
     {
-        return @$this->config[self::CONFIG_KEY_POLICYENFORCER];
+        return (array) @$this->config[self::CONFIG_KEY_POLICYENFORCER];
     }
 }

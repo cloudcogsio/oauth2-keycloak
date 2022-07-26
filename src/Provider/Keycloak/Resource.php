@@ -24,7 +24,7 @@ class Resource
     const ID = "_id";
     const ATTRIBUTES = "attributes";
     
-    private $config = [
+    private array $config = [
         self::NAME => null,
         self::TYPE => null,
         self::ICON_URI => null,
@@ -65,40 +65,40 @@ class Resource
         }
     }
     
-    public function setName(string $name)
+    public function setName(string $name): Resource
     {
         $this->config[self::NAME] = $name;
         return $this;
     }
     
-    public function getName()
+    public function getName() : ?string
     {
         return @$this->config[self::NAME];
     }
     
-    public function setType(string $type)
+    public function setType(string $type): Resource
     {
         $this->config[self::TYPE] = $type;
         return $this;
     }
     
-    public function getType()
+    public function getType() : ?string
     {
         return @$this->config[self::TYPE];
     }
     
-    public function setIconUri(string $icon_uri)
+    public function setIconUri(string $icon_uri): Resource
     {
         $this->config[self::ICON_URI] = $icon_uri;
         return $this;
     }
     
-    public function getIconUri()
+    public function getIconUri() : ?string
     {
         return @$this->config[self::ICON_URI];
     }
     
-    public function setResourceScopes(array $resourceScopes, $merge = false)
+    public function setResourceScopes(array $resourceScopes, $merge = false): Resource
     {
         if($merge && is_array(@$this->config[self::RESOURCE_SCOPES]))
         {
@@ -111,7 +111,7 @@ class Resource
         return $this;
     }
     
-    public function getResourceScopes()
+    public function getResourceScopes(): array
     {
         $scopes = [];
         if(is_array(@$this->config[self::RESOURCE_SCOPES]))
@@ -131,29 +131,29 @@ class Resource
         return $scopes;
     }
     
-    public function setOwner(string $owner)
+    public function setOwner(string $owner): Resource
     {
         $this->config[self::OWNER] = $owner;
         return $this;
     }
     
-    public function getOwner()
+    public function getOwner() : ?string
     {
         return @$this->config[self::OWNER];
     }
     
-    public function setOwnerManagedAccess(bool $value)
+    public function setOwnerManagedAccess(bool $value): Resource
     {
         $this->config[self::OWNER_MANAGED_ACCESS] = $value;
         return $this;
     }
     
-    public function getOwnerManagedAccess()
+    public function getOwnerManagedAccess() : ?bool
     {
         return @$this->config[self::NAME];
     }
     
-    public function setUris(array $uris)
+    public function setUris(array $uris): Resource
     {
         if(is_array(@$this->config[self::URIS]))
         {
@@ -166,12 +166,12 @@ class Resource
         return $this;
     }
     
-    public function getUris()
+    public function getUris() : ?array
     {
         return @$this->config[self::URIS];
     }
     
-    public function getId()
+    public function getId() : ?string
     {
         return @$this->config[self::ID];
     }

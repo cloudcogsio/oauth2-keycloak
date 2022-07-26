@@ -1,65 +1,59 @@
 <?php
 namespace Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\Definitions;
 
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\Resources\AbstractApiResource;
+
 abstract class AbstractDefinition
 {
-    protected $resourceParams;
-    
-    protected $data;
-    
+    protected array $resourceParams;
+
+    protected array $data;
+
+    /**
+     * @param array $data
+     */
     public function __construct(array $data = [])
     {
         $validated = $this->validateParams($data);
         $this->data = $validated;
     }
-    
-    protected function validateParams(array $params)
+
+    /**
+     * @param array $params
+     * @return array
+     */
+    protected final function validateParams(array $params): array
     {
-        if (!$this->resourceParams)
-        {
+        if (!isset($this->resourceParams)) {
             $self = new \ReflectionClass($this);
             $this->resourceParams = array_flip($self->getConstants());
         }
-        
+
         return array_intersect_key($params, $this->resourceParams);
     }
-    
-    public function getData()
+
+    /**
+     * @return array
+     */
+    public function getData(): array
     {
         return $this->data;
     }
-    
+
+    /**
+     * @param $param
+     * @return mixed|null
+     */
     public function __get($param)
     {
         return (array_key_exists($param, $this->data)) ? $this->data[$param] : null;
     }
-    
+
+    /**
+     * @return false|string
+     */
     public function __toString()
     {
         return json_encode($this->data);
-    }
-    
-    public function generateGettersAndSetters()
-    {
-        $self = new \ReflectionClass($this);
-        foreach ($self->getConstants() as $const=>$value)
-        {
-            ob_start();
-            ?>
-    public function get<?= ucfirst($value); ?>()
-    {
-    	return $this->{self::<?= $const; ?>};
-    }
-    
-    public function set<?= ucfirst($value); ?>($value)
-    {
-    	$this->data[self::<?= $const; ?>] = $value;
-    	return $this;
-    }
-    
-<?php 
-            $data = ob_get_clean();
-            file_put_contents(@array_pop(explode("\\",get_class($this))).".txt", $data, FILE_APPEND);
-        }
     }
 }

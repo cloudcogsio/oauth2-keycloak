@@ -22,6 +22,13 @@
 	},
 	"require" : {
 		"cloudcogsio/oauth2-openid-connect-discovery" : "dev-master",
-		"laminas/laminas-http" : "~2.14.3"
+		"laminas/laminas-http" : "~2.14.3",
+		"ext-json": "*",
+		"ext-curl": "*"
+	},
+	"config": {
+		"platform": {
+			"php": "7.4"
+		}
 	}
 }

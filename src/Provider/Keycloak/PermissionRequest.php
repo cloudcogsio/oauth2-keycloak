@@ -7,8 +7,13 @@ class PermissionRequest
     const RESOURCE_SCOPES = "resource_scopes";
     const CLAIMS = "claims";
     
-    private $requestData;
-    
+    private array $requestData;
+
+    /**
+     * @param string $resourceId
+     * @param array $scopes
+     * @param array $claims
+     */
     public function __construct(string $resourceId, array $scopes = [], array $claims = [])
     {
         $this->requestData[self::RESOURCE_ID] = $resourceId;
@@ -23,22 +28,31 @@ class PermissionRequest
             }
         }
     }
-    
-    public function addScope(string $scope)
+
+    /**
+     * @param string $scope
+     * @return $this
+     */
+    public function addScope(string $scope): PermissionRequest
     {
         if (!in_array($scope, $this->requestData[self::RESOURCE_SCOPES]))
             $this->requestData[self::RESOURCE_SCOPES][] = $scope;
         
         return $this;
     }
-    
-    public function addClaim(string $claim, $value)
+
+    /**
+     * @param string $claim
+     * @param $value
+     * @return $this
+     */
+    public function addClaim(string $claim, $value): PermissionRequest
     {
         $this->requestData[self::CLAIMS][$claim] = $value;
         return $this;
     }
     
-    public function getRequestData()
+    public function getRequestData(): array
     {
         return $this->requestData;
     }

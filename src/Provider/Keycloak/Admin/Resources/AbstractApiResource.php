@@ -6,49 +6,208 @@ use League\OAuth2\Client\Token\AccessToken;
 
 abstract class AbstractApiResource
 {
-    /** @var \Cloudcogs\OAuth2\Client\Provider\Keycloak **/
-    protected $Keycloak;
+    /** @var Keycloak **/
+    protected Keycloak $Keycloak;
     
-    protected $ClientCredentialsToken;
-    protected $endpoint;
-    protected $resourceParams;
-    
+    protected AccessToken $ClientCredentialsToken;
+    protected string $endpoint;
+    protected array $resourceParams;
+
+    /**
+     * @param Keycloak $Keycloak
+     * @param string $endpoint
+     */
     public function __construct(Keycloak $Keycloak, string $endpoint)
     {
         $this->Keycloak = $Keycloak;
         
         $this->setEndpoint($endpoint);
     }
-    
-    protected function getAccessToken() : AccessToken
+
+    /**
+     * @return AccessToken
+     * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
+     */
+    protected final function getAccessToken() : AccessToken
     {
-        if(!$this->ClientCredentialsToken)
+        if(!isset($this->ClientCredentialsToken))
         {
             $this->ClientCredentialsToken = $this->Keycloak->getAccessToken("client_credentials");
         }
         
         return $this->ClientCredentialsToken;
     }
-    
-    protected final function setEndpoint(string $resourceEndpoint)
+
+    /**
+     * @param string $resourceEndpoint
+     * @return $this
+     */
+    protected final function setEndpoint(string $resourceEndpoint): AbstractApiResource
     {
         $this->endpoint = $this->Keycloak->getAdminApiBaseUrl().$resourceEndpoint;
         return $this;
     }
-    
+
+    /**
+     * @return string
+     */
     protected final function getEndpoint() : string
     {
         return $this->endpoint;
     }
-    
-    protected function validateParams(array $params)
+
+    /**
+     * @param array $params
+     * @return array
+     */
+    protected final function validateParams(array $params): array
     {
-        if (!$this->resourceParams)
+        if (!isset($this->resourceParams))
         {
             $self = new \ReflectionClass($this);
             $this->resourceParams = array_flip($self->getConstants());
         }
         
         return array_intersect_key($params, $this->resourceParams);
+    }
+
+    /**
+     * @param array $params
+     * @return \Psr\Http\Message\ResponseInterface
+     * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
+     */
+    protected function getResourceData(array $params = []): \Psr\Http\Message\ResponseInterface
+    {
+        $validated = $this->validateParams($params);
+
+        $HttpRequest = $this->Keycloak
+            ->getRequestFactory()
+            ->getRequest(
+                "GET",
+                $this->getEndpoint()."?".http_build_query($validated),
+                $this->getHttpRequestHeaders()
+            );
+
+        return $this->Keycloak->getResponse($HttpRequest);
+    }
+
+    /**
+     * @param string $resourceId
+     * @return \Psr\Http\Message\ResponseInterface
+     * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
+     * @throws \Exception
+     */
+    protected function getResource(string $resourceId): \Psr\Http\Message\ResponseInterface
+    {
+        $HttpRequest = $this->Keycloak
+            ->getRequestFactory()
+            ->getRequest(
+                "GET",
+                $this->getEndpoint()."/".$resourceId,
+                $this->getHttpRequestHeaders()
+            );
+
+        $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
+
+        if ($HttpResponse->getStatusCode() == "200")
+        {
+            return $HttpResponse;
+        }
+
+        throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+    }
+
+    /**
+     * @param string $ResourceAsString
+     * @return bool
+     * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
+     * @throws \Exception
+     */
+    protected function addResource(string $ResourceAsString): bool
+    {
+        $HttpRequest = $this->Keycloak
+            ->getRequestFactory()
+            ->getRequest(
+                "POST",
+                $this->getEndpoint(),
+                $this->getHttpRequestHeaders(),
+                $ResourceAsString
+            );
+
+        $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
+
+        if ($HttpResponse->getStatusCode() == "201")
+        {
+            return true;
+        }
+
+        throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+    }
+
+    /**
+     * @param string $resourceId
+     * @return bool
+     * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
+     * @throws \Exception
+     */
+    protected function deleteResource(string $resourceId): bool
+    {
+        $HttpRequest = $this->Keycloak
+            ->getRequestFactory()
+            ->getRequest(
+                "DELETE",
+                $this->getEndpoint()."/".$resourceId,
+                $this->getHttpRequestHeaders()
+            );
+
+        $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
+
+        if ($HttpResponse->getStatusCode() == "204")
+        {
+            return true;
+        }
+
+        throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+    }
+
+    /**
+     * @param string $resourceId
+     * @param string $ResourceAsString
+     * @return bool
+     * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
+     * @throws \Exception
+     */
+    protected function updateResource(string $resourceId, string $ResourceAsString): bool
+    {
+        $HttpRequest = $this->Keycloak
+            ->getRequestFactory()
+            ->getRequest(
+                "PUT",
+                $this->getEndpoint()."/".$resourceId,
+                $this->getHttpRequestHeaders(),
+                $ResourceAsString
+            );
+
+        $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
+
+        if ($HttpResponse->getStatusCode() == "204")
+        {
+            return true;
+        }
+
+        throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+    }
+
+    /**
+     * @return string[]
+     * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
+     */
+    protected function getHttpRequestHeaders(): array
+    {
+        $Token = $this->getAccessToken()->getToken();
+        return [
+            "Authorization"=>"Bearer ".$Token,
+            "Content-Type"=>"application/json"
+        ];
     }
 }

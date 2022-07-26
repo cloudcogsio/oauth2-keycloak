@@ -28,8 +28,8 @@ class UMAPolicy
     
     const POLICY_TYPE_UMA = "uma";
     
-    private $data;
-    private $resourceId;
+    private array $data;
+    private ?string $resourceId;
     
     public function __construct(string $resourceId = null, array $data = [])
     {
@@ -37,50 +37,50 @@ class UMAPolicy
         $this->data = $this->validateDataArray($data);
     }
     
-    public function getResourceId()
+    public function getResourceId(): ?string
     {
         return $this->resourceId;
     }
     
-    public function getId()
+    public function getId() : ?string
     {
         return $this->{self::ID};
     }
     
-    public function setId(string $id)
+    public function setId(string $id): UMAPolicy
     {
         $this->data[self::ID] = $id;
         return $this;
     }
     
-    public function getName()
+    public function getName() : ?string
     {
         return $this->{self::NAME};
     }
     
-    public function setName(string $name)
+    public function setName(string $name): UMAPolicy
     {
         $this->data[self::NAME] = $name;
         return $this;
     }
     
-    public function getDescription()
+    public function getDescription() : ?string
     {
         return $this->{self::DESCRIPTION};
     }
     
-    public function setDescription(string $description)
+    public function setDescription(string $description): UMAPolicy
     {
         $this->data[self::DESCRIPTION] = $description;
         return $this;
     }
     
-    public function getType()
+    public function getType() : ?string
     {
         return $this->{self::TYPE};
     }
     
-    public function setType(string $type = self::POLICY_TYPE_UMA)
+    public function setType(string $type = self::POLICY_TYPE_UMA): UMAPolicy
     {
         $this->data[self::TYPE] = $type;
         return $this;
@@ -91,7 +91,7 @@ class UMAPolicy
         return $this->{self::SCOPES};
     }
     
-    public function setScopes(array $scopes)
+    public function setScopes(array $scopes): UMAPolicy
     {
         $this->data[self::SCOPES] = $scopes;
         return $this;
@@ -102,7 +102,7 @@ class UMAPolicy
         return $this->{self::ROLES};
     }
     
-    public function setRoles(array $roles)
+    public function setRoles(array $roles): UMAPolicy
     {
         $this->data[self::ROLES] = $roles;
         return $this;
@@ -113,7 +113,7 @@ class UMAPolicy
         return $this->{self::GROUPS};
     }
     
-    public function setGroups(array $groups)
+    public function setGroups(array $groups): UMAPolicy
     {
         $this->data[self::GROUPS] = $groups;
         return $this;
@@ -124,18 +124,23 @@ class UMAPolicy
         return $this->{self::CLIENTS};
     }
     
-    public function setClients(array $clients)
+    public function setClients(array $clients): UMAPolicy
     {
         $this->data[self::CLIENTS] = $clients;
         return $this;
     }
     
-    public function getLogic() : array
+    public function getLogic() : ?string
     {
         return $this->{self::LOGIC};
     }
-    
-    public function setLogic(string $logic)
+
+    /**
+     * @param string $logic
+     * @return $this
+     * @throws InvalidUMAPolicyLogic
+     */
+    public function setLogic(string $logic): UMAPolicy
     {
         $this->verifyLogicOption($logic);
         
@@ -143,12 +148,17 @@ class UMAPolicy
         return $this;
     }
     
-    public function getDecisionStrategy() : array
+    public function getDecisionStrategy() : ?string
     {
         return $this->{self::DECISION_STRATEGY};
     }
-    
-    public function setDecisionStrategy(string $strategy)
+
+    /**
+     * @param string $strategy
+     * @return $this
+     * @throws InvalidDecisionStrategy
+     */
+    public function setDecisionStrategy(string $strategy): UMAPolicy
     {
         $this->verifyDecisionStrategyOption($strategy);
         
@@ -156,18 +166,18 @@ class UMAPolicy
         return $this;
     }
     
-    public function getOwner() : array
+    public function getOwner() : ?string
     {
         return $this->{self::OWNER};
     }
     
-    public function setOwner(string $owner)
+    public function setOwner(string $owner): UMAPolicy
     {        
         $this->data[self::OWNER] = $owner;
         return $this;
     }
     
-    public function getData()
+    public function getData() : array
     {
         return $this->data;
     }
@@ -182,7 +192,13 @@ class UMAPolicy
         if ($this->{self::RESOURCE_ID}) unset($this->data[self::RESOURCE_ID]);
         return json_encode($this->data);
     }
-    
+
+    /**
+     * @param array $data
+     * @return array
+     * @throws InvalidDecisionStrategy
+     * @throws InvalidUMAPolicyLogic
+     */
     protected function validateDataArray(array $data) : array
     {
         $self = new \ReflectionClass($this);
@@ -205,8 +221,13 @@ class UMAPolicy
         
         return $verified;
     }
-    
-    protected function verifyLogicOption(string $value)
+
+    /**
+     * @param string $value
+     * @return bool
+     * @throws InvalidUMAPolicyLogic
+     */
+    protected function verifyLogicOption(string $value): bool
     {
         if (!in_array($value, [self::LOGIC_NEGATIVE, self::LOGIC_POSITIVE]))
         {
@@ -215,8 +236,13 @@ class UMAPolicy
         
         return true;
     }
-    
-    protected function verifyDecisionStrategyOption(string $value)
+
+    /**
+     * @param string $value
+     * @return bool
+     * @throws InvalidDecisionStrategy
+     */
+    protected function verifyDecisionStrategyOption(string $value): bool
     {
         if (!in_array($value, [self::DECISION_STRATEGY_AFFIRMATIVE, self::DECISION_STRATEGY_CONSENSUS, self::DECISION_STRATEGY_UNANIMOUS]))
         {
