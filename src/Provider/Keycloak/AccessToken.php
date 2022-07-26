@@ -29,7 +29,7 @@ class AccessToken extends LeagueAccessToken
         return $this->refresh_expires;
     }
     
-    public function hasRefreshExpired()
+    public function hasRefreshExpired(): bool
     {
         $expires = $this->getRefreshExpires();
         

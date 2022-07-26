@@ -5,14 +5,19 @@ class ClaimToken
 {
     const FORMAT = "urn:ietf:params:oauth:token-type:jwt";
     
-    private $data;
+    private array $data;
     
     public function __construct(array $claims = [])
     {
         $this->data = $claims;
     }
-    
-    public function addClaim(string $claim, $value)
+
+    /**
+     * @param string $claim
+     * @param $value
+     * @return $this
+     */
+    public function addClaim(string $claim, $value): ClaimToken
     {
         $this->data[$claim] = $value;
         return $this;

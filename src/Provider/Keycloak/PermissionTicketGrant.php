@@ -10,7 +10,7 @@ class PermissionTicketGrant
     CONST GRANTED = "granted";
     CONST REQUESTER = "requester";
     
-    private $data;
+    private array $data;
     
     public function __construct(array $data = [])
     {
@@ -21,8 +21,8 @@ class PermissionTicketGrant
     {
         return $this->{self::ID};
     }
-    
-    public function setId(string $Id)
+
+    public function setId(string $Id): PermissionTicketGrant
     {
         $this->data[self::ID] = $Id;
         return $this;
@@ -33,7 +33,7 @@ class PermissionTicketGrant
         return $this->{self::OWNER};
     }
     
-    public function setOwner(string $owner)
+    public function setOwner(string $owner): PermissionTicketGrant
     {
         $this->data[self::OWNER] = $owner;
         return $this;
@@ -44,7 +44,7 @@ class PermissionTicketGrant
         return $this->{self::RESOURCE};
     }
     
-    public function setResource(string $resource)
+    public function setResource(string $resource): PermissionTicketGrant
     {
         $this->data[self::RESOURCE] = $resource;
         return $this;
@@ -55,7 +55,7 @@ class PermissionTicketGrant
         return $this->{self::SCOPE};
     }
     
-    public function setScope(string $scope) 
+    public function setScope(string $scope): PermissionTicketGrant
     {
         $this->data[self::SCOPE] = $scope;
         return $this;
@@ -66,7 +66,7 @@ class PermissionTicketGrant
         return $this->{self::GRANTED};
     }
     
-    public function setGranted(bool $bool)
+    public function setGranted(bool $bool): PermissionTicketGrant
     {
         $this->data[self::GRANTED] = ($bool) ? "true" : "false";
         return $this;
@@ -77,13 +77,13 @@ class PermissionTicketGrant
         return $this->{self::REQUESTER};
     }
     
-    public function setRequester(string $requester)
+    public function setRequester(string $requester): PermissionTicketGrant
     {
         $this->data[self::REQUESTER] = $requester;
         return $this;
     }
     
-    public function getData()
+    public function getData(): array
     {
         return $this->data;
     }

@@ -1,6 +1,9 @@
 <?php
 namespace Cloudcogs\OAuth2\Client\Provider\Keycloak;
 
+use Exception;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
+
 class PermissionManagement extends AbstractAuthorizationServices
 {
     const PARAM_SCOPE_ID = "scopeId";
@@ -12,7 +15,7 @@ class PermissionManagement extends AbstractAuthorizationServices
     const PARAM_FIRST = "first";
     const PARAM_MAX = "max";
     
-    private $permissionList;
+    private array $permissionList;
     
     /**
      * Create a permission ticket that represents a permission request.
@@ -24,7 +27,7 @@ class PermissionManagement extends AbstractAuthorizationServices
      * 
      * @see https://www.keycloak.org/docs/latest/authorization_services/#creating-permission-ticket
      * 
-     * @throws \Exception
+     * @throws Exception
      * @return string
      */
     public function createPermissionTicket() : string
@@ -49,11 +52,11 @@ class PermissionManagement extends AbstractAuthorizationServices
                 return $resourceData->ticket;
             }
             else {
-                throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+                throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
             }
         }
         else {
-            throw new \Exception("No permission requests found");
+            throw new Exception("No permission requests found");
         }
     }
     
@@ -63,7 +66,7 @@ class PermissionManagement extends AbstractAuthorizationServices
      * @param PermissionRequest $PermissionRequest
      * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\PermissionManagement
      */
-    public function addPermissionRequest(PermissionRequest $PermissionRequest)
+    public function addPermissionRequest(PermissionRequest $PermissionRequest): PermissionManagement
     {
         if (!$this->permissionList) $this->permissionList = [];
         
@@ -79,7 +82,7 @@ class PermissionManagement extends AbstractAuthorizationServices
      * @see https://www.keycloak.org/docs/latest/authorization_services/#getting-permission-tickets
      *  
      * @param array $params
-     * @throws \Exception
+     * @throws Exception
      * @return array
      */
     public function getPermissionTicketGrants(array $params = []) : array
@@ -110,10 +113,16 @@ class PermissionManagement extends AbstractAuthorizationServices
             return $list;
         }
         else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+            throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
         }
     }
-    
+
+    /**
+     * @param PermissionTicketGrant $PermissionTicketGrant
+     * @return bool
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
     public function updatePermissionTicketGrant(PermissionTicketGrant $PermissionTicketGrant) : bool
     {
         $PAT = $this->getProtectionAPIToken();
@@ -131,10 +140,16 @@ class PermissionManagement extends AbstractAuthorizationServices
             return true;
         }
         else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+            throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
         }
     }
-    
+
+    /**
+     * @param PermissionTicketGrant $PermissionTicketGrant
+     * @return bool
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
     public function deletePermissionTicketGrant(PermissionTicketGrant $PermissionTicketGrant) : bool
     {
         $PAT = $this->getProtectionAPIToken();
@@ -152,10 +167,14 @@ class PermissionManagement extends AbstractAuthorizationServices
             return true;
         }
         else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+            throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
         }
     }
-    
+
+    /**
+     * @param array $data
+     * @return array
+     */
     protected function validateDataArray(array $data) : array
     {
         $self = new \ReflectionClass($this);

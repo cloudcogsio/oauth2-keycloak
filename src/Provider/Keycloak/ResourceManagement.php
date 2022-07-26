@@ -11,6 +11,9 @@
 
 namespace Cloudcogs\OAuth2\Client\Provider\Keycloak;
 
+use Exception;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
+
 /**
  * Enables Keycloak resource servers to remotely manage their resources
  * 
@@ -26,7 +29,13 @@ class ResourceManagement extends AbstractAuthorizationServices
     const PARAM_NAME_EXACT = "exactName";
     const PARAM_FIRST = "first";
     const PARAM_MAX = "max";
-    
+
+    /**
+     * @param string $resourceId
+     * @return Resource
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
     public function getResource(string $resourceId) : Resource
     {
         $PAT = $this->getProtectionAPIToken();
@@ -45,10 +54,16 @@ class ResourceManagement extends AbstractAuthorizationServices
             return new Resource((array) $resourceData);
         }
         else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+            throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
         }
     }
-    
+
+    /**
+     * @param Resource $Resource
+     * @return Resource
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
     public function createResource(Resource $Resource) : Resource
     {
         $PAT = $this->getProtectionAPIToken();
@@ -67,10 +82,17 @@ class ResourceManagement extends AbstractAuthorizationServices
             return new Resource((array) $resourceData);
         }
         else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+            throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
         }
     }
-    
+
+    /**
+     * @param string $resourceId
+     * @param Resource $Resource
+     * @return bool
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
     public function updateResource(string $resourceId, Resource $Resource) : bool
     {
         $PAT = $this->getProtectionAPIToken();
@@ -88,10 +110,16 @@ class ResourceManagement extends AbstractAuthorizationServices
             return true;
         }
         else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+            throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
         }
     }
-    
+
+    /**
+     * @param string $resourceId
+     * @return bool
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
     public function deleteResource(string $resourceId) : bool
     {
         $PAT = $this->getProtectionAPIToken();
@@ -109,10 +137,17 @@ class ResourceManagement extends AbstractAuthorizationServices
             return true;
         }
         else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+            throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
         }
     }
-    
+
+    /**
+     * @param array $query_filters
+     * @param array $query_params
+     * @return array
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
     public function listResources(array $query_filters, array $query_params = []) : array
     {
         $valid_filters = [
@@ -154,11 +189,11 @@ class ResourceManagement extends AbstractAuthorizationServices
                 return json_decode((string) $HttpResponse->getBody());
             }
             else {
-                throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+                throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
             }
         }
         else {
-            throw new \Exception("No valid query filters detected");
+            throw new Exception("No valid query filters detected");
         }
     }
 }

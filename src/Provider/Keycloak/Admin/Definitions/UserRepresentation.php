@@ -1,6 +1,12 @@
 <?php
 namespace Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\Definitions;
 
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\Resources\Users;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
+
+/**
+ * https://www.keycloak.org/docs-api/18.0/rest-api/index.html#_userrepresentation
+ */
 class UserRepresentation extends AbstractDefinition
 {
     const ACCESS = "access";
@@ -33,223 +39,389 @@ class UserRepresentation extends AbstractDefinition
     const ACTION_UPDATE_PASSWORD = "update_password";
     const ACTION_VERIFY_EMAIL = "verify_email";
     const ACTION_UPDATE_USER_LOCALE = "update_user_locale";
-    const ACTION_CONFIGURE_TOTP = "configure_totp";    
-    
-    public function getAccess() : array
+    const ACTION_CONFIGURE_TOTP = "configure_totp";
+
+    protected Users $Users;
+
+    public function __construct(array $data = [], Users $Users)
+    {
+        $this->Users = $Users;
+        parent::__construct($data);
+    }
+
+    /**
+     * @return UserRepresentation
+     * @throws IdentityProviderException
+     */
+    public function save(): UserRepresentation
+    {
+        return $this->Users->updateUser($this);
+    }
+
+    /**
+     * @return bool
+     * @throws IdentityProviderException
+     */
+    public function delete() : bool
+    {
+        return $this->Users->deleteUser($this);
+    }
+
+    /**
+     * @return array
+     */
+    public function getAccess() : ?array
     {
         return $this->{self::ACCESS};
     }
-    
-    public function setAccess(array $value)
+
+    /**
+     * @param array $value
+     * @return $this
+     */
+    public function setAccess(array $value): UserRepresentation
     {
         $this->data[self::ACCESS] = $value;
         return $this;
     }
-    
-    public function getAttributes() : array
+
+    /**
+     * @return array
+     */
+    public function getAttributes() : ?array
     {
         return $this->{self::ATTRIBUTES};
     }
-    
-    public function setAttributes(array $value)
+
+    /**
+     * @param array $value
+     * @return $this
+     */
+    public function setAttributes(array $value): UserRepresentation
     {
         $this->data[self::ATTRIBUTES] = $value;
         return $this;
     }
-    
-    public function getClientConsents() : array
+
+    /**
+     * @return array
+     */
+    public function getClientConsents() : ?array
     {
         return $this->{self::CLIENT_CONSENTS};
     }
-    
-    public function setClientConsents(array $value)
+
+    /**
+     * @param array $value
+     * @return $this
+     */
+    public function setClientConsents(array $value): UserRepresentation
     {
         $this->data[self::CLIENT_CONSENTS] = $value;
         return $this;
     }
-    
-    public function getClientRoles() : array
+
+    /**
+     * @return array
+     */
+    public function getClientRoles() : ?array
     {
         return $this->{self::CLIENT_ROLES};
     }
-    
-    public function setClientRoles(array $value)
+
+    /**
+     * @param array $value
+     * @return $this
+     */
+    public function setClientRoles(array $value): UserRepresentation
     {
         $this->data[self::CLIENT_ROLES] = $value;
         return $this;
     }
-    
-    public function getCreatedTimestamp()
+
+    /**
+     * @return int|null
+     */
+    public function getCreatedTimestamp(): ?int
     {
         return $this->{self::CREATED_TIMESTAMP};
     }
-    
-    public function setCreatedTimestamp(int $value)
+
+    /**
+     * @param int $value
+     * @return $this
+     */
+    public function setCreatedTimestamp(int $value): UserRepresentation
     {
         $this->data[self::CREATED_TIMESTAMP] = $value;
         return $this;
     }
-    
-    public function getCredentials() : array
+
+    /**
+     * @return array
+     */
+    public function getCredentials() : ?array
     {
         return $this->{self::CREDENTIALS};
     }
-    
-    public function setCredentials(array $value)
+
+    /**
+     * @param array $value
+     * @return $this
+     */
+    public function setCredentials(array $value): UserRepresentation
     {
         $this->data[self::CREDENTIALS] = $value;
         return $this;
     }
-    
-    public function getDisableableCredentialTypes() : array
+
+    /**
+     * @return array
+     */
+    public function getDisableableCredentialTypes() : ?array
     {
         return $this->{self::DISABLEABLE_CREDENTIAL_TYPES};
     }
-    
-    public function setDisableableCredentialTypes(array $value)
+
+    /**
+     * @param array $value
+     * @return $this
+     */
+    public function setDisableableCredentialTypes(array $value): UserRepresentation
     {
         $this->data[self::DISABLEABLE_CREDENTIAL_TYPES] = $value;
         return $this;
     }
-    
-    public function getEmail()
+
+    /**
+     * @return string|null
+     */
+    public function getEmail() : ?string
     {
         return $this->{self::EMAIL};
     }
-    
-    public function setEmail(string $value)
+
+    /**
+     * @param string $value
+     * @return $this
+     */
+    public function setEmail(string $value): UserRepresentation
     {
         $this->data[self::EMAIL] = $value;
         return $this;
     }
-    
-    public function getEmailVerified() : bool
+
+    /**
+     * @return bool
+     */
+    public function getEmailVerified() : ?bool
     {
         return $this->{self::EMAIL_VERIFIED};
     }
-    
-    public function setEmailVerified(bool $value)
+
+    /**
+     * @param bool $value
+     * @return $this
+     */
+    public function setEmailVerified(bool $value): UserRepresentation
     {
         $this->data[self::EMAIL_VERIFIED] = ($value) ? "true" : "false";
         return $this;
     }
-    
-    public function getEnabled() : bool
+
+    /**
+     * @return bool
+     */
+    public function getEnabled() : ?bool
     {
         return $this->{self::ENABLED};
     }
-    
-    public function setEnabled(bool $value)
+
+    /**
+     * @param bool $value
+     * @return $this
+     */
+    public function setEnabled(bool $value): UserRepresentation
     {
         $this->data[self::ENABLED] = ($value) ? "true" : "false";
         return $this;
     }
-    
-    public function getFederatedIdentities() : array
+
+    /**
+     * @return array
+     */
+    public function getFederatedIdentities() : ?array
     {
         return $this->{self::FEDERATED_IDENTITIES};
     }
-    
-    public function setFederatedIdentities(array $value)
+
+    /**
+     * @param array $value
+     * @return $this
+     */
+    public function setFederatedIdentities(array $value): UserRepresentation
     {
         $this->data[self::FEDERATED_IDENTITIES] = $value;
         return $this;
     }
-    
-    public function getFederationLink()
+
+    /**
+     * @return string|null
+     */
+    public function getFederationLink() : ?string
     {
         return $this->{self::FEDERATION_LINK};
     }
-    
-    public function setFederationLink($value)
+
+    /**
+     * @param string $value
+     * @return $this
+     */
+    public function setFederationLink(string $value): UserRepresentation
     {
         $this->data[self::FEDERATION_LINK] = $value;
         return $this;
     }
-    
-    public function getFirstName()
+
+    /**
+     * @return string|null
+     */
+    public function getFirstName(): ?string
     {
         return $this->{self::FIRST_NAME};
     }
-    
-    public function setFirstName($value)
+
+    /**
+     * @param string $value
+     * @return $this
+     */
+    public function setFirstName(string $value): UserRepresentation
     {
         $this->data[self::FIRST_NAME] = $value;
         return $this;
     }
-    
-    public function getGroups() : array
+
+    /**
+     * @return array
+     */
+    public function getGroups() : ?array
     {
         return $this->{self::GROUPS};
     }
-    
-    public function setGroups(array $value)
+
+    /**
+     * @param array $value
+     * @return $this
+     */
+    public function setGroups(array $value): UserRepresentation
     {
         $this->data[self::GROUPS] = $value;
         return $this;
     }
-    
-    public function getId()
+
+    /**
+     * @return string|null
+     */
+    public function getId(): ?string
     {
         return $this->{self::ID};
     }
-    
-    public function setId($value)
+
+    /**
+     * @param string $value
+     * @return $this
+     */
+    public function setId(string $value): UserRepresentation
     {
         $this->data[self::ID] = $value;
         return $this;
     }
-    
-    public function getLastName()
+
+    /**
+     * @return string|null
+     */
+    public function getLastName(): ?string
     {
         return $this->{self::LAST_NAME};
     }
-    
-    public function setLastName($value)
+
+    /**
+     * @param string $value
+     * @return $this
+     */
+    public function setLastName(string $value): UserRepresentation
     {
         $this->data[self::LAST_NAME] = $value;
         return $this;
     }
-    
-    public function getNotBefore()
+
+    /**
+     * @return int|null
+     */
+    public function getNotBefore() : ?int
     {
         return $this->{self::NOT_BEFORE};
     }
-    
-    public function setNotBefore(int $value)
+
+    /**
+     * @param int $value
+     * @return $this
+     */
+    public function setNotBefore(int $value): UserRepresentation
     {
         $this->data[self::NOT_BEFORE] = $value;
         return $this;
     }
-    
-    public function getOrigin()
+
+    /**
+     * @return string|null
+     */
+    public function getOrigin(): ?string
     {
         return $this->{self::ORIGIN};
     }
-    
-    public function setOrigin($value)
+
+    /**
+     * @param string $value
+     * @return $this
+     */
+    public function setOrigin(string $value): UserRepresentation
     {
         $this->data[self::ORIGIN] = $value;
         return $this;
     }
-    
-    public function getRealmRoles() : array
+
+    /**
+     * @return array
+     */
+    public function getRealmRoles() : ?array
     {
         return $this->{self::REALM_ROLES};
     }
-    
-    public function setRealmRoles(array $value)
+
+    /**
+     * @param array $value
+     * @return $this
+     */
+    public function setRealmRoles(array $value): UserRepresentation
     {
         $this->data[self::REALM_ROLES] = $value;
         return $this;
     }
-    
+
+    /**
+     * @return array
+     */
     public function getRequiredActions() : array
     {
         return $this->{self::REQUIRED_ACTIONS};
     }
-    
-    public function setRequiredActions(array $value)
+
+    /**
+     * @param array $value
+     * @return $this
+     */
+    public function setRequiredActions(array $value): UserRepresentation
     {
         foreach ($value as &$action)
         {
@@ -259,40 +431,64 @@ class UserRepresentation extends AbstractDefinition
         $this->data[self::REQUIRED_ACTIONS] = $value;
         return $this;
     }
-    
-    public function getSelf()
+
+    /**
+     * @return string|null
+     */
+    public function getSelf(): ?string
     {
         return $this->{self::SELF};
     }
-    
-    public function setSelf($value)
+
+    /**
+     * @param string $value
+     * @return $this
+     */
+    public function setSelf(string $value): UserRepresentation
     {
         $this->data[self::SELF] = $value;
         return $this;
     }
-    
-    public function getServiceAccountClientId()
+
+    /**
+     * @return string|null
+     */
+    public function getServiceAccountClientId(): ?string
     {
         return $this->{self::SERVICE_ACCOUNT_CLIENT_ID};
     }
-    
-    public function setServiceAccountClientId($value)
+
+    /**
+     * @param string $value
+     * @return $this
+     */
+    public function setServiceAccountClientId(string $value): UserRepresentation
     {
         $this->data[self::SERVICE_ACCOUNT_CLIENT_ID] = $value;
         return $this;
     }
-    
-    public function getUsername()
+
+    /**
+     * @return string|null
+     */
+    public function getUsername(): ?string
     {
         return $this->{self::USERNAME};
     }
-    
-    public function setUsername($value)
+
+    /**
+     * @param string $value
+     * @return $this
+     */
+    public function setUsername(string $value): UserRepresentation
     {
         $this->data[self::USERNAME] = $value;
         return $this;
     }
-    
+
+    /**
+     * @return mixed|null
+     */
     public function getTotp()
     {
         return $this->{self::TOTP};

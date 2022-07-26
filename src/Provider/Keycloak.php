@@ -11,7 +11,9 @@
 
 namespace Cloudcogs\OAuth2\Client\Provider;
 
-use League\OAuth2\Client\Provider\AbstractProvider;
+use Cloudcogs\OAuth2\Client\OpenIDConnect\Exception\InvalidUrlException;
+use Cloudcogs\OAuth2\Client\OpenIDConnect\Exception\TokenIntrospectionException;
+use Cloudcogs\OAuth2\Client\OpenIDConnect\Exception\WellKnownEndpointException;
 use Psr\Http\Message\ResponseInterface;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\RequiredOptionMissingException;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
@@ -52,20 +54,20 @@ class Keycloak extends AbstractOIDCProvider
      *
      * @var string
      */
-    protected $authServerUrl;
+    protected string $authServerUrl;
     
     /**
      * Auto-generated - Admin API base url for the admin API endpoints
      * @var string
      */
-    protected $adminApiBaseUrl;
+    protected string $adminApiBaseUrl;
     
     /**
      * The Keycloak realm
      * 
      * @var string
      */
-    protected $realm;
+    protected string $realm;
     
     /**
      * Keycloak JSON configuration (recommended but optional)
@@ -74,9 +76,9 @@ class Keycloak extends AbstractOIDCProvider
      * 'keycloak.json' can be retrieved from the Keycloak server, 'Client->Installation' tab.
      * 
      * 
-     * @var \Cloudcogs\OAuth2\Client\Provider\Keycloak\Config
+     * @var Config
      */
-    protected $config;
+    protected Config $config;
     
     /**
      * Minimum required options for the constructor if no keycloak.json configuration file is provided.
@@ -84,7 +86,7 @@ class Keycloak extends AbstractOIDCProvider
      * 
      * @var array
      */
-    protected $required = ['authServerUrl','realm'];
+    protected array $required = ['authServerUrl','realm'];
     
     /**
      * Constructs an OAuth 2.0 service provider.
@@ -103,15 +105,21 @@ class Keycloak extends AbstractOIDCProvider
      * @throws RequiredOptionMissingException
      */
     
-    /** @var \Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceManagement **/
-    protected $ResourceManagement;
+    /** @var ResourceManagement **/
+    protected ResourceManagement $ResourceManagement;
     
-    /** @var \Cloudcogs\OAuth2\Client\Provider\Keycloak\PermissionManagement **/
-    protected $PermissionManagement;
+    /** @var PermissionManagement **/
+    protected PermissionManagement $PermissionManagement;
     
-    /** @var \Cloudcogs\OAuth2\Client\Provider\Keycloak\PolicyManagement **/
-    protected $PolicyManagement;
-    
+    /** @var PolicyManagement **/
+    protected PolicyManagement $PolicyManagement;
+
+    /**
+     * @param array $options
+     * @param array $collaborators
+     * @throws InvalidConfigFileException
+     * @throws RequiredOptionMissingException
+     */
     public function __construct(array $options = [], array $collaborators = [])
     {
         /**
@@ -120,8 +128,9 @@ class Keycloak extends AbstractOIDCProvider
         if (array_key_exists(self::OPTIONS_KEY_CONFIG, $options))
         {
             $this->loadKeycloakConfig($options[self::OPTIONS_KEY_CONFIG]);
+            $options[self::OPTIONS_KEY_CONFIG] = $this->config;
         }
-        
+
         // Config file not passed, check for authServerUrl and realm keys
         else 
         {
@@ -136,12 +145,12 @@ class Keycloak extends AbstractOIDCProvider
                 $this->$param = $options[$param];
             }
         }
-        
+
         $options[AbstractOIDCProvider::OPTION_WELL_KNOWN_URL] = ((substr($this->authServerUrl,-1) == "/") ? rtrim($this->authServerUrl,"/") : $this->authServerUrl)."/realms/".$this->realm."/.well-known/openid-configuration";
         $options[AbstractOIDCProvider::OPTION_PUBLICKEY_CACHE_PROVIDER] = (!isset($options[AbstractOIDCProvider::OPTION_PUBLICKEY_CACHE_PROVIDER])) ? '' : $options[AbstractOIDCProvider::OPTION_PUBLICKEY_CACHE_PROVIDER];
         
         $this->adminApiBaseUrl = ((substr($this->authServerUrl,-1) == "/") ? rtrim($this->authServerUrl,"/") : $this->authServerUrl)."/admin/realms/".$this->realm."/";
-        
+
         parent::__construct($options, $collaborators);
     }
     
@@ -150,10 +159,12 @@ class Keycloak extends AbstractOIDCProvider
      * 
      * @param string | array $config - Full path and filename of the configuration file or array representation of keycloak.json settings. 
      * @throws InvalidConfigFileException
-     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak
+     * @return Keycloak
      */
-    public function loadKeycloakConfig($config)
+    public function loadKeycloakConfig($config): Keycloak
     {
+        $json = null;
+
         if (is_array($config))
         {
             $json = $config;
@@ -233,7 +244,7 @@ class Keycloak extends AbstractOIDCProvider
      *
      * @return array
      */
-    protected function getAuthorizationHeaders($token = null)
+    protected function getAuthorizationHeaders($token = null): array
     {
         return [
             'Authorization' => "Bearer $token"
@@ -247,7 +258,7 @@ class Keycloak extends AbstractOIDCProvider
      * 
      * @return string
      */
-    public function getIntrospectionEndpoint()
+    public function getIntrospectionEndpoint(): string
     {
         return $this->OIDCDiscovery->getIntrospectionEndpoint();
     }
@@ -257,7 +268,7 @@ class Keycloak extends AbstractOIDCProvider
      * 
      * @return string
      */
-    public function getEndSessionEndpoint()
+    public function getEndSessionEndpoint(): string
     {
         return $this->OIDCDiscovery->end_session_endpoint;
     }
@@ -268,16 +279,17 @@ class Keycloak extends AbstractOIDCProvider
      * 
      * @return string
      */
-    public function getLogoutUrl()
+    public function getLogoutUrl(): string
     {
         return $this->getEndSessionEndpoint();
     }
-    
+
     /**
      * (Convenience Method) Perform keycloak logout and redirect
-     * Implementions will need to clear application session accordingly. 
-     * 
-     * @param string $redirect_url - Redirect URL after logout. If none is provided, the configured provider 'redirectUrl' will be used 
+     * Implementions will need to clear application session accordingly.
+     *
+     * Redirect URL after logout. If none is provided, the configured provider 'redirectUrl' will be used
+     * @param string|null $redirect_uri
      */
     public function logoutAndRedirect(string $redirect_uri = null)
     {
@@ -293,24 +305,24 @@ class Keycloak extends AbstractOIDCProvider
      * 
      * @return string
      */
-    public function getCertificateEndpoint()
+    public function getCertificateEndpoint(): string
     {
         return $this->OIDCDiscovery->getJwksUri();
     }
-    
+
     /**
      * For Keycloak clients that are configured for Authorization, this method retrieves a token from Keycloak that contains the resource permissions for the user.
      * Additional features are also effected based on the RequestingPartyTokenRequest that is passed to this method.
      *
+     * @param RequestingPartyTokenRequest $Request
+     * @param bool $useTokenHint - Indicates if the RPT should contain mainly the "permissions" (true) claim or the full UMA token (false).
+     * @return RequestingPartyTokenResponse
+     * @throws AuthorizationTokenException
+     * @throws TokenIntrospectionException
+     * @throws IdentityProviderException
      * @see \Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyTokenRequest
      * @see https://www.keycloak.org/docs/latest/authorization_services/#_service_rpt_overview
      *
-     * @param RequestingPartyTokenRequest $Request
-     * @param bool $useTokenHint - Indicates if the RPT should contain mainly the "permissions" (true) claim or the full UMA token (false). 
-     * @throws IdentityProviderException
-     * @throws AuthorizationTokenException
-     *
-     * @return \League\OAuth2\Client\Token\AccessTokenInterface
      */
     public function getAuthorizationToken(RequestingPartyTokenRequest $Request, bool $useTokenHint = true) : RequestingPartyTokenResponse
     {
@@ -331,11 +343,9 @@ class Keycloak extends AbstractOIDCProvider
             {
                 case "200":
                     return new RequestingPartyTokenResponse($this, new RequestingPartyToken($AccessToken), $useTokenHint);
-                    break;
                     
                 default:
                     throw new IdentityProviderException(@$AccessToken['error']." [".@$AccessToken['error_description']."]", $Response->getStatusCode(), $AccessToken);
-                    break;
             }
         }
         
@@ -344,12 +354,13 @@ class Keycloak extends AbstractOIDCProvider
 
     /**
      * Exchange a token issued by another client
-     * 
+     *
      * @see https://www.keycloak.org/docs/latest/securing_apps/#_token-exchange
-     * 
+     *
      * @param string $ClientAccessToken - Bearer Token issued by another client
      * @param string $requested_token_type -  If your requested_token_type parameter is a refresh token type, then the response will contain both an access token, refresh token, and expiration.
      * @return AccessTokenInterface
+     * @throws IdentityProviderException
      */
     public function tokenExchange(string $ClientAccessToken, string $requested_token_type = TokenExchange::REQUESTED_TOKEN_TYPE_ACCESS) : AccessTokenInterface
     {
@@ -363,16 +374,18 @@ class Keycloak extends AbstractOIDCProvider
 
     /**
      * Proxy to Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceManagement
-     * 
-     * @param object $WellKnownUMA2Configuration - Previously retrieved UMA well-known config. If empty, autodiscovery is performed.
-     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\ResourceManagement
+     *
+     * @param object|null $WellKnownUMA2Configuration - Previously retrieved UMA well-known config. If empty, autodiscovery is performed.
+     * @return ResourceManagement
+     * @throws InvalidUrlException
+     * @throws WellKnownEndpointException
      */
-    public function ResourceManagement($WellKnownUMA2Configuration = null) : ResourceManagement
+    public function ResourceManagement(object $WellKnownUMA2Configuration = null) : ResourceManagement
     {
-        if (!$this->ResourceManagement)
+        if (!isset($this->ResourceManagement))
         {
             $uma2_url = ((substr($this->authServerUrl,-1) == "/") ? rtrim($this->authServerUrl,"/") : $this->authServerUrl)."/realms/".$this->realm."/.well-known/uma2-configuration";
-            
+
             if ($WellKnownUMA2Configuration == null)
             {
                 $resource_registration_endpoint = "";
@@ -380,27 +393,29 @@ class Keycloak extends AbstractOIDCProvider
             else {
                 $resource_registration_endpoint = $WellKnownUMA2Configuration->resource_registration_endpoint;
             }
-            
-            $this->ResourceManagement = new ResourceManagement($this, $uma2_url, (empty($resource_registration_endpoint)) ? true : false);
-            
+
+            $this->ResourceManagement = new ResourceManagement($this, $uma2_url, empty($resource_registration_endpoint));
+
             if ($WellKnownUMA2Configuration)
             {
                 $this->ResourceManagement->setWellKnownConfiguration($WellKnownUMA2Configuration);
             }
         }
-        
+
         return $this->ResourceManagement;
     }
-    
+
     /**
      * Proxy to Cloudcogs\OAuth2\Client\Provider\Keycloak\PermissionManagement
-     * 
-     * @param object $WellKnownUMA2Configuration - Previously retrieved UMA well-known config. If empty, autodiscovery is performed.
-     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\PermissionManagement
+     *
+     * @param object|null $WellKnownUMA2Configuration - Previously retrieved UMA well-known config. If empty, autodiscovery is performed.
+     * @return PermissionManagement
+     * @throws InvalidUrlException
+     * @throws WellKnownEndpointException
      */
-    public function PermissionManagement($WellKnownUMA2Configuration = null) : PermissionManagement
+    public function PermissionManagement(object $WellKnownUMA2Configuration = null) : PermissionManagement
     {
-        if (!$this->PermissionManagement)
+        if (!isset($this->PermissionManagement))
         {
             $uma2_url = ((substr($this->authServerUrl,-1) == "/") ? rtrim($this->authServerUrl,"/") : $this->authServerUrl)."/realms/".$this->realm."/.well-known/uma2-configuration";
             
@@ -412,7 +427,7 @@ class Keycloak extends AbstractOIDCProvider
                 $permission_endpoint = $WellKnownUMA2Configuration->permission_endpoint;
             }
             
-            $this->PermissionManagement = new PermissionManagement($this, $uma2_url, (empty($permission_endpoint)) ? true : false);
+            $this->PermissionManagement = new PermissionManagement($this, $uma2_url, empty($permission_endpoint));
             
             if ($WellKnownUMA2Configuration)
             {
@@ -422,16 +437,20 @@ class Keycloak extends AbstractOIDCProvider
         
         return $this->PermissionManagement;
     }
-    
+
     /**
      * Proxy to Cloudcogs\OAuth2\Client\Provider\Keycloak\PolicyManagement
-     * 
-     * @param object $WellKnownUMA2Configuration - Previously retrieved UMA well-known config. If empty, autodiscovery is performed.
-     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\PolicyManagement
+     *
+     * @param object|null $WellKnownUMA2Configuration - Previously retrieved UMA well-known config. If empty, autodiscovery is performed.
+     * @param string $ClientAccessToken
+     * @return PolicyManagement
+     * @throws IdentityProviderException
+     * @throws InvalidUrlException
+     * @throws WellKnownEndpointException
      */
-    public function PolicyManagement(string $ClientAccessToken, $WellKnownUMA2Configuration = null) : PolicyManagement
+    public function PolicyManagement(string $ClientAccessToken, object $WellKnownUMA2Configuration = null) : PolicyManagement
     {
-        if (!$this->PolicyManagement)
+        if (!isset($this->PolicyManagement))
         {
             $uma2_url = ((substr($this->authServerUrl,-1) == "/") ? rtrim($this->authServerUrl,"/") : $this->authServerUrl)."/realms/".$this->realm."/.well-known/uma2-configuration";
             
@@ -443,7 +462,7 @@ class Keycloak extends AbstractOIDCProvider
                 $policy_endpoint = $WellKnownUMA2Configuration->policy_endpoint;
             }
             
-            $this->PolicyManagement = new PolicyManagement($this, $uma2_url, (empty($policy_endpoint)) ? true : false);
+            $this->PolicyManagement = new PolicyManagement($this, $uma2_url, empty($policy_endpoint));
             $this->PolicyManagement->setUMAPolicyAccessToken($this->tokenExchange($ClientAccessToken));
             
             if ($WellKnownUMA2Configuration)
@@ -454,22 +473,23 @@ class Keycloak extends AbstractOIDCProvider
         
         return $this->PolicyManagement;
     }
-    
+
     /**
      * Returns an instance of the specified resource Api.
      * Resources can be one of the RESOURCE_* constants defined in \Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\ClientFactory
-     * 
+     *
      * @param string $Resource
      * @return AbstractApiResource
+     * @throws Keycloak\Exception\ApiResourceNotFoundException
+     * @throws Keycloak\Exception\ApiResourceException
      */
     public function AdminApiClientFactory(string $Resource) : AbstractApiResource
     {
         return (new ClientFactory())($this, $Resource);
     }
     
-    public function getAdminApiBaseUrl()
+    public function getAdminApiBaseUrl(): string
     {
         return $this->adminApiBaseUrl;
     }
 }
-

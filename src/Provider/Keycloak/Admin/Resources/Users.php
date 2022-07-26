@@ -7,7 +7,13 @@ use Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\Definitions\CredentialRepres
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\Definitions\FederatedIdentityRepresentation;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\ClientFactory;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\Definitions\GroupRepresentation;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\ApiResourceNotFoundException;
+use Exception;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 
+/**
+ * https://www.keycloak.org/docs-api/18.0/rest-api/index.html#_users_resource
+ */
 class Users extends AbstractApiResource
 {
     const PARAM_BRIEF_REPRESENTATION = "briefRepresentation";
@@ -23,21 +29,18 @@ class Users extends AbstractApiResource
     const PARAM_MAX = "max";
     const PARAM_SEARCH = "search";
     const PARAM_USERNAME = "username";
-    
+
+    /**
+     * @param array $params
+     * @return array
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
     public function getUsers(array $params = []) : array
     {
-        $validated = $this->validateParams($params);
         $users = [];
-        
-        $Token = $this->getAccessToken()->getToken();
-        $HttpRequest = $this->Keycloak->getRequestFactory()->getRequest("GET", $this->getEndpoint()."?".http_build_query($validated),
-            [
-                "Authorization"=>"Bearer ".$Token,
-                "Content-Type"=>"application/json"
-            ]);
-        
-        $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
-        
+        $HttpResponse = $this->getResourceData($params);
+
         if ($HttpResponse->getStatusCode() == "200")
         {
             $usersData = json_decode((string) $HttpResponse->getBody(), true);
@@ -48,99 +51,78 @@ class Users extends AbstractApiResource
                     $users[] = $this->hydrate($userData);
                 }
             }
-            
+
             return $users;
         }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+
+        throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
     }
-    
-    public function getUser(string $Id) : UserRepresentation
-    {        
-        $Token = $this->getAccessToken()->getToken();
-        $HttpRequest = $this->Keycloak->getRequestFactory()->getRequest("GET", $this->getEndpoint()."/".$Id,
-            [
-                "Authorization"=>"Bearer ".$Token,
-                "Content-Type"=>"application/json"
-            ]);
-        
-        $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
-        
-        if ($HttpResponse->getStatusCode() == "200")
-        {
-            $userData = json_decode((string) $HttpResponse->getBody(), true);
-            return $this->hydrate($userData);
-        }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
-    }
-    
-    public function addUser(UserRepresentation $User)
+
+    /**
+     * @param string $Id
+     * @return UserRepresentation
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
+    public function getUser(string $Id) : ?UserRepresentation
     {
-        $Token = $this->getAccessToken()->getToken();
-        $HttpRequest = $this->Keycloak->getRequestFactory()->getRequest("POST", $this->getEndpoint(),
-            [
-                "Authorization"=>"Bearer ".$Token,
-                "Content-Type"=>"application/json"
-            ], $User->__toString());
-        
-        $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
-        
-        if ($HttpResponse->getStatusCode() == "201")
-        {
-            $newUser = $this->getUsers([Users::PARAM_BRIEF_REPRESENTATION => false, Users::PARAM_EMAIL => $User->getEmail()]);
-            if (is_array($newUser) && count($newUser) === 1) return $newUser[0];
+        $HttpResponse = $this->getResource($Id);
+        $userData = json_decode((string) $HttpResponse->getBody(), true);
+
+        if (!is_array($userData)) return null;
+
+        return $this->hydrate($userData);
+    }
+
+    /**
+     * @param UserRepresentation $User
+     * @return UserRepresentation|null
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
+    public function addUser(UserRepresentation $User) : ?UserRepresentation
+    {
+        $this->addResource($User->__toString());
+
+        $newUser = $this->getUsers([Users::PARAM_BRIEF_REPRESENTATION => false, Users::PARAM_EMAIL => $User->getEmail()]);
+        if (count($newUser) === 1)
+            return $newUser[0];
             
-            return true;
-        }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+        return null;
     }
-    
-    public function updateUser(UserRepresentation $User)
+
+    /**
+     * @param UserRepresentation $User
+     * @return UserRepresentation
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
+    public function updateUser(UserRepresentation $User): UserRepresentation
     {
-        $Token = $this->getAccessToken()->getToken();
-        $HttpRequest = $this->Keycloak->getRequestFactory()->getRequest("PUT", $this->getEndpoint()."/".$User->getId(),
-            [
-                "Authorization"=>"Bearer ".$Token,
-                "Content-Type"=>"application/json"
-            ], $User->__toString());
-        
-        $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
-        
-        if ($HttpResponse->getStatusCode() == "204")
-        {
-            return $this->getUser($User->getId());
-        }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+        $this->updateResource($User->getId(), $User->__toString());
+        return $this->getUser($User->getId());
     }
-    
-    public function deleteUser(UserRepresentation $User)
+
+    /**
+     * @param UserRepresentation $User
+     * @return bool
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
+    public function deleteUser(UserRepresentation $User): bool
     {
-        $Token = $this->getAccessToken()->getToken();
-        $HttpRequest = $this->Keycloak->getRequestFactory()->getRequest("DELETE", $this->getEndpoint()."/".$User->getId(),
-            [
-                "Authorization"=>"Bearer ".$Token,
-                "Content-Type"=>"application/json"
-            ]);
-        
-        $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
-        
-        if ($HttpResponse->getStatusCode() == "204")
-        {
-            return true;
-        }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+        return $this->deleteResource($User->getId());
     }
-    
-    public function getGroupMemberships(UserRepresentation $User, array $params = [])
+
+    /**
+     * @param UserRepresentation $User
+     * @param array $params
+     * @return array
+     * @throws ApiResourceNotFoundException
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
+    public function getGroupMemberships(UserRepresentation $User, array $params = []): array
     {
         $groups = [];
         $validated = $this->validateParams($params);
@@ -165,12 +147,19 @@ class Users extends AbstractApiResource
             
             return $groups;
         }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+
+        throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
     }
-    
-    public function addGroupMembership(UserRepresentation $User, GroupRepresentation $Group)
+
+    /**
+     * @param UserRepresentation $User
+     * @param GroupRepresentation $Group
+     * @return array
+     * @throws ApiResourceNotFoundException
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
+    public function addGroupMembership(UserRepresentation $User, GroupRepresentation $Group): array
     {
         $Token = $this->getAccessToken()->getToken();
         $HttpRequest = $this->Keycloak->getRequestFactory()->getRequest("PUT", $this->getEndpoint()."/".$User->getId()."/groups/".$Group->getId(),
@@ -185,12 +174,19 @@ class Users extends AbstractApiResource
         {
             return $this->getGroupMemberships($User);
         }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+
+        throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
     }
-    
-    public function deleteGroupMembership(UserRepresentation $User, GroupRepresentation $Group)
+
+    /**
+     * @param UserRepresentation $User
+     * @param GroupRepresentation $Group
+     * @return array
+     * @throws ApiResourceNotFoundException
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
+    public function deleteGroupMembership(UserRepresentation $User, GroupRepresentation $Group): array
     {
         $Token = $this->getAccessToken()->getToken();
         $HttpRequest = $this->Keycloak->getRequestFactory()->getRequest("DELETE", $this->getEndpoint()."/".$User->getId()."/groups/".$Group->getId(),
@@ -205,11 +201,16 @@ class Users extends AbstractApiResource
         {
             return $this->getGroupMemberships($User);
         }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+
+        throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
     }
-    
+
+    /**
+     * @param UserRepresentation $User
+     * @return bool
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
     public function logout(UserRepresentation $User) : bool
     {
         $Token = $this->getAccessToken()->getToken();
@@ -225,11 +226,17 @@ class Users extends AbstractApiResource
         {
             return true;
         }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+
+        throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
     }
-    
+
+    /**
+     * @param UserRepresentation $User
+     * @param string $password
+     * @return bool
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
     public function resetPassword(UserRepresentation $User, string $password) : bool
     {
         $Token = $this->getAccessToken()->getToken();
@@ -245,18 +252,19 @@ class Users extends AbstractApiResource
         {
             return true;
         }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+
+        throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
     }
-    
+
     /**
-     * 
      * @param UserRepresentation $User
-     * @throws \Exception
+     * @param string $clientId
+     * @param string $redirectUri
      * @return bool
+     * @throws IdentityProviderException
+     * @throws Exception
      */
-    public function sendVerificationEmail(UserRepresentation $User, string $clientId = "", string $redirectUri = "")
+    public function sendVerificationEmail(UserRepresentation $User, string $clientId = "", string $redirectUri = ""): bool
     {
         $params = [];
         if ($clientId) $params['client_id'] = $clientId;
@@ -275,11 +283,14 @@ class Users extends AbstractApiResource
         {
             return true;
         }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+
+        throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
     }
-    
+
+    /**
+     * @param array $userData
+     * @return UserRepresentation
+     */
     public function hydrate(array $userData) : UserRepresentation
     {
         if (array_key_exists(UserRepresentation::CLIENT_CONSENTS, $userData) && !empty($userData[UserRepresentation::CLIENT_CONSENTS]))
@@ -306,6 +317,6 @@ class Users extends AbstractApiResource
             }
         }
         
-        return new UserRepresentation($userData);
+        return new UserRepresentation($userData, $this);
     }
 }

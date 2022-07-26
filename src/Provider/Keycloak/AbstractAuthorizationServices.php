@@ -15,15 +15,24 @@ use League\OAuth2\Client\Provider\AbstractProvider;
 use Cloudcogs\OAuth2\Client\OpenIDConnect\Exception\InvalidUrlException;
 use Cloudcogs\OAuth2\Client\OpenIDConnect\Exception\WellKnownEndpointException;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
+use League\OAuth2\Client\Token\AccessTokenInterface;
 
 abstract class AbstractAuthorizationServices
 {
     private $uma2_well_known_url;
-    private $WellKnownUMA2Configuration;
-    private $PAT;
+    private object $WellKnownUMA2Configuration;
+    private AccessTokenInterface $PAT;
     
-    protected $Keycloak;
-    
+    protected Keycloak $Keycloak;
+
+    /**
+     * @param Keycloak $Keycloak
+     * @param string $oidc_well_known_url
+     * @param bool $discover
+     * @throws InvalidUrlException
+     * @throws WellKnownEndpointException
+     */
     public function __construct(Keycloak $Keycloak, string $oidc_well_known_url, bool $discover = false)
     {
         $this->uma2_well_known_url = str_replace("openid", "uma2", $oidc_well_known_url);
@@ -33,13 +42,22 @@ abstract class AbstractAuthorizationServices
             $this->getWellKnownUMA2Endpoints();
         }
     }
-    
-    public function getProtectionAPIToken()
+
+    /**
+     * @return AccessTokenInterface
+     * @throws IdentityProviderException
+     */
+    public function getProtectionAPIToken() : AccessTokenInterface
     {
-        return (!$this->PAT)? $this->PAT = $this->Keycloak->getAccessToken('client_credentials') : $this->PAT;
+        return (!(($this->PAT) instanceof AccessTokenInterface))? $this->PAT = $this->Keycloak->getAccessToken('client_credentials') : $this->PAT;
     }
-    
-    public function getWellKnownUMA2Endpoints()
+
+    /**
+     * @return object
+     * @throws InvalidUrlException
+     * @throws WellKnownEndpointException
+     */
+    public function getWellKnownUMA2Endpoints(): object
     {
         // Check if well-known URL has a valid URL format
         if(!filter_var($this->uma2_well_known_url, FILTER_VALIDATE_URL))
@@ -55,11 +73,10 @@ abstract class AbstractAuthorizationServices
         if ($HttpResponse->getStatusCode() == "200")
         {
             $this->WellKnownUMA2Configuration = (object) json_decode((string) $HttpResponse->getBody());
+            return $this->WellKnownUMA2Configuration;
         }
-        else
-        {
-            throw new WellKnownEndpointException($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+
+        throw new WellKnownEndpointException($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
     }
     
     /**
@@ -67,93 +84,103 @@ abstract class AbstractAuthorizationServices
      *
      * @return object
      */
-    public function getWellKnownConfiguration()
+    public function getWellKnownConfiguration(): object
     {
         return $this->WellKnownUMA2Configuration;
     }
     
-    public function setWellKnownConfiguration($WellKnownUMA2Configuration)
+    public function setWellKnownConfiguration(object $WellKnownUMA2Configuration): AbstractAuthorizationServices
     {
         $this->WellKnownUMA2Configuration = $WellKnownUMA2Configuration;
         return $this;
     }
-    
-    public function getIssuer()
+
+    public function getIssuer() : string
     {
         return $this->issuer;
     }
     
-    public function getAuthorizationEndpoint()
+    public function getAuthorizationEndpoint() : string
     {
         return $this->authorization_endpoint;
     }
     
-    public function getTokenEndpoint()
+    public function getTokenEndpoint() : string
     {
         return $this->token_endpoint;
     }
     
-    public function getIntrospectionEndpoint()
+    public function getIntrospectionEndpoint() : string
     {
         return $this->introspection_endpoint;
     }
     
-    public function getEndSessionEndpoint()
+    public function getEndSessionEndpoint() : string
     {
         return $this->end_session_endpoint;
     }
+
+    public function isFrontChannelLogoutSessionSupported() : bool
+    {
+        return $this->frontchannel_logout_session_supported;
+    }
+
+    public function isFrontChannelLogoutSupported() : bool
+    {
+        return $this->frontchannel_logout_supported;
+    }
     
-    public function getJwksUri()
+    public function getJwksUri() : string
     {
         return $this->jwks_uri;
     }
     
-    public function getGrantTypesSupported()
+    public function getGrantTypesSupported() : array
     {
         return $this->grant_types_supported;
     }
     
-    public function getResponseTypesSupported()
+    public function getResponseTypesSupported() : array
     {
         return $this->response_types_supported;
     }
     
-    public function getResponseModesSupported()
+    public function getResponseModesSupported() : array
     {
         return $this->response_modes_supported;
     }
     
-    public function getRegistrationEndpoint()
+    public function getRegistrationEndpoint() : string
     {
         return $this->registration_endpoint;
     }
     
-    public function getTokenEndpointAuthMethodsSupported()
+    public function getTokenEndpointAuthMethodsSupported() : array
     {
         return $this->token_endpoint_auth_methods_supported;
     }
     
-    public function getTokenEndpointAuthSigningAlgValuesSupported()
+    public function getTokenEndpointAuthSigningAlgValuesSupported() : array
     {
         return $this->token_endpoint_auth_signing_alg_values_supported;
     }
     
-    public function getScopesSupported()
+    public function getScopesSupported() : array
     {
         return $this->scopes_supported;
     }
     
-    public function getResourceRegistrationEndpoint()
+    public function getResourceRegistrationEndpoint() : string
     {
         return $this->resource_registration_endpoint;
     }
     
-    public function getPermissionEndpoint()
+    public function getPermissionEndpoint() : string
     {
         return $this->permission_endpoint;
     }
     
-    public function getPolicyEndpoint()
+    public function getPolicyEndpoint() : string
     {
         return $this->policy_endpoint;
     }

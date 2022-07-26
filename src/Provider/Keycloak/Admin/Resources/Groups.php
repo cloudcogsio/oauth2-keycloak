@@ -4,27 +4,32 @@ namespace Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\Resources;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\Definitions\GroupRepresentation;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\ClientFactory;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\ApiGroupNotFoundException;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\ApiResourceNotFoundException;
+use Exception;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 
+/**
+ * @see https://www.keycloak.org/docs-api/18.0/rest-api/index.html#_groups_resource
+ */
 class Groups extends AbstractApiResource
 {    
     const PARAM_BRIEF_REPRESENTATION = "briefRepresentation";
     const PARAM_FIRST = "first";
     const PARAM_MAX = "max";
     const PARAM_SEARCH = "search";
-    
-    public function getGroups(array $params = []) : array
+
+    /**
+     * Get group hierarchy.
+     *
+     * @param array $params
+     * @return array|null
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
+    public function getGroups(array $params = []) : ?array
     {
-        $validated = $this->validateParams($params);
         $groups = [];
-        
-        $Token = $this->getAccessToken()->getToken();
-        $HttpRequest = $this->Keycloak->getRequestFactory()->getRequest("GET", $this->getEndpoint()."?".http_build_query($validated),
-            [
-                "Authorization"=>"Bearer ".$Token,
-                "Content-Type"=>"application/json"
-            ]);
-        
-        $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
+        $HttpResponse = $this->getResourceData($params);
         
         if ($HttpResponse->getStatusCode() == "200")
         {
@@ -37,37 +42,36 @@ class Groups extends AbstractApiResource
             return $groups;
         }
         else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+            throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
         }
     }
-    
-    public function getGroup(string $Id) : GroupRepresentation
+
+    /**
+     * @param string $Id
+     * @return GroupRepresentation
+     * @throws IdentityProviderException
+     * @throws Exception
+     * @throws ApiGroupNotFoundException;
+     */
+    public function getGroup(string $Id) : ?GroupRepresentation
     {
-        $Token = $this->getAccessToken()->getToken();
-        $HttpRequest = $this->Keycloak->getRequestFactory()->getRequest("GET", $this->getEndpoint()."/".$Id,
-            [
-                "Authorization"=>"Bearer ".$Token,
-                "Content-Type"=>"application/json"
-            ]);
-        
-        $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
-        
-        if ($HttpResponse->getStatusCode() == "200")
+        $HttpResponse = $this->getResource($Id);
+        $groupData = json_decode((string) $HttpResponse->getBody(), true);
+        if (is_array($groupData))
         {
-            $groupData = json_decode((string) $HttpResponse->getBody(), true);
-            if (is_array($groupData))
-            {
-                $result = [$groupData];
-                $result = $this->recursiveHydrate($result);
-                return $result[0];
-            }
+            $result = [$groupData];
+            $result = $this->recursiveHydrate($result);
+            return $result[0];
         }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+
+        throw new ApiGroupNotFoundException($Id);
     }
-    
-    public function recursiveHydrate($groupList)
+
+    /**
+     * @param array $groupList
+     * @return array
+     */
+    public function recursiveHydrate(array $groupList): array
     {
         foreach ($groupList as $i=>$groupData)
         {
@@ -81,98 +85,86 @@ class Groups extends AbstractApiResource
         
         return $groupList;
     }
-    
-    public function addGroup(GroupRepresentation $Group)
+
+    /**
+     * @param GroupRepresentation $Group
+     * @return GroupRepresentation|null
+     * @throws IdentityProviderException
+     */
+    public function addGroup(GroupRepresentation $Group) : ?GroupRepresentation
     {
-        $Token = $this->getAccessToken()->getToken();
-        $HttpRequest = $this->Keycloak->getRequestFactory()->getRequest("POST", $this->getEndpoint(),
-            [
-                "Authorization"=>"Bearer ".$Token,
-                "Content-Type"=>"application/json"
-            ], $Group->__toString());
+        $this->addResource($Group->__toString());
         
-        $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
-        
-        if ($HttpResponse->getStatusCode() == "201")
-        {
-            $newGroup = $this->getGroups([Groups::PARAM_BRIEF_REPRESENTATION => false, Groups::PARAM_SEARCH => $Group->getName()]);
-            if (is_array($newGroup) && count($newGroup) === 1) return $newGroup[0];
-            
-            return true;
-        }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+        $newGroup = $this->getGroups([Groups::PARAM_BRIEF_REPRESENTATION => false, Groups::PARAM_SEARCH => $Group->getName()]);
+        if (count($newGroup) === 1)
+            return $newGroup[0];
+
+        return null;
     }
-    
-    public function updateGroup(GroupRepresentation $Group)
+
+    /**
+     * @param GroupRepresentation $Group
+     * @return GroupRepresentation
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
+    public function updateGroup(GroupRepresentation $Group): GroupRepresentation
     {
-        $Token = $this->getAccessToken()->getToken();
-        $HttpRequest = $this->Keycloak->getRequestFactory()->getRequest("PUT", $this->getEndpoint()."/".$Group->getId(),
-            [
-                "Authorization"=>"Bearer ".$Token,
-                "Content-Type"=>"application/json"
-            ], $Group->__toString());
-        
-        $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
-        
-        if ($HttpResponse->getStatusCode() == "204")
-        {
-            return $this->getGroup($Group->getId());
-        }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+        $this->updateResource($Group->getId(), $Group->__toString());
+        return $this->getGroup($Group->getId());
     }
-    
-    public function deleteGroup(GroupRepresentation $Group)
+
+    /**
+     * @param GroupRepresentation $Group
+     * @return bool
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
+    public function deleteGroup(GroupRepresentation $Group): bool
     {
-        $Token = $this->getAccessToken()->getToken();
-        $HttpRequest = $this->Keycloak->getRequestFactory()->getRequest("DELETE", $this->getEndpoint()."/".$Group->getId(),
-            [
-                "Authorization"=>"Bearer ".$Token,
-                "Content-Type"=>"application/json"
-            ]);
-        
-        $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
-        
-        if ($HttpResponse->getStatusCode() == "204")
-        {
-            true;
-        }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+        return $this->deleteResource($Group->getId());
     }
-    
-    public function setOrCreateChildGroup(string $parentGroupId, GroupRepresentation $ChildGroup)
+
+    /**
+     * @param string $parentGroupId
+     * @param GroupRepresentation $ChildGroup
+     * @return GroupRepresentation
+     * @throws ApiGroupNotFoundException
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
+    public function setOrCreateChildGroup(string $parentGroupId, GroupRepresentation $ChildGroup): GroupRepresentation
     {
-        $Token = $this->getAccessToken()->getToken();
-        $HttpRequest = $this->Keycloak->getRequestFactory()->getRequest("POST", $this->getEndpoint()."/$parentGroupId/children",
-            [
-                "Authorization"=>"Bearer ".$Token,
-                "Content-Type"=>"application/json"
-            ], $ChildGroup->__toString());
+        $HttpRequest = $this->Keycloak
+            ->getRequestFactory()
+            ->getRequest(
+                "POST",
+                $this->getEndpoint()."/$parentGroupId/children",
+                $this->getHttpRequestHeaders(),
+                $ChildGroup->__toString()
+            );
         
         $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
         
         if ($HttpResponse->getStatusCode() == "201")
         {
             $newGroup = $this->getGroups([Groups::PARAM_BRIEF_REPRESENTATION => false, Groups::PARAM_SEARCH => $ChildGroup->getName()]);
-            if (is_array($newGroup)) 
-            {        
-                $createdGroup = $this->recursiveSearchByName($ChildGroup->getName(), $newGroup);
-                if ($createdGroup instanceof GroupRepresentation) return $createdGroup;
-            }
+            $createdGroup = $this->recursiveSearchByName($ChildGroup->getName(), $newGroup);
+            if ($createdGroup instanceof GroupRepresentation)
+                return $createdGroup;
             
             throw new ApiGroupNotFoundException();
         }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+
+        throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
     }
-    
-    public function recursiveSearchByName(string $name, array $Groups)
+
+    /**
+     * @param string $name
+     * @param array $Groups
+     * @return GroupRepresentation|null
+     */
+    public function recursiveSearchByName(string $name, array $Groups): ?GroupRepresentation
     {
         foreach ($Groups as $group)
         {
@@ -186,17 +178,27 @@ class Groups extends AbstractApiResource
         
         return null;
     }
-    
+
+    /**
+     * @param GroupRepresentation $Group
+     * @param array $params
+     * @return array
+     * @throws ApiResourceNotFoundException
+     * @throws IdentityProviderException
+     * @throws Exception
+     */
     public function getMembers(GroupRepresentation $Group, array $params = []) : array
     {
         $members = [];
         $validated = $this->validateParams($params);
-        $Token = $this->getAccessToken()->getToken();
-        $HttpRequest = $this->Keycloak->getRequestFactory()->getRequest("GET", $this->getEndpoint()."/".$Group->getId()."/members?".http_build_query($validated),
-            [
-                "Authorization"=>"Bearer ".$Token,
-                "Content-Type"=>"application/json"
-            ]);
+
+        $HttpRequest = $this->Keycloak
+            ->getRequestFactory()
+            ->getRequest(
+                "GET",
+                $this->getEndpoint()."/".$Group->getId()."/members?".http_build_query($validated),
+                $this->getHttpRequestHeaders()
+            );
         
         $HttpResponse = $this->Keycloak->getResponse($HttpRequest);
         
@@ -211,8 +213,7 @@ class Groups extends AbstractApiResource
             
             return $members;
         }
-        else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
-        }
+
+        throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
     }
 }

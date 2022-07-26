@@ -1,8 +1,8 @@
 <?php
 namespace Cloudcogs\OAuth2\Client\Provider\Keycloak;
 
+use Cloudcogs\OAuth2\Client\OpenIDConnect\Exception\TokenIntrospectionException;
 use Laminas\Http\Response;
-use Cloudcogs\OAuth2\Client\Provider\Keycloak\RequestingPartyToken;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak;
 use Cloudcogs\OAuth2\Client\OpenIDConnect\ParsedToken;
 
@@ -11,10 +11,16 @@ class RequestingPartyTokenResponse extends Response
     CONST PARAM_TOKEN_TYPE_HINT = "token_type_hint";
     CONST TOKEN_TYPE_RPT = "requesting_party_token";
     
-    protected $RPT;
-    protected $Keycloak;
-    protected $ParsedToken;
-    
+    protected RequestingPartyToken $RPT;
+    protected Keycloak $Keycloak;
+    protected ParsedToken $ParsedToken;
+
+    /**
+     * @param Keycloak $Keycloak
+     * @param RequestingPartyToken $RequestingPartyToken
+     * @param bool $useTokenHint
+     * @throws TokenIntrospectionException
+     */
     public function __construct(Keycloak $Keycloak, RequestingPartyToken $RequestingPartyToken, bool $useTokenHint = true)
     {
         $this->Keycloak = $Keycloak;

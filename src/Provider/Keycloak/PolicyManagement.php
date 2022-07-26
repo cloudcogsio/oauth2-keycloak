@@ -1,6 +1,8 @@
 <?php
 namespace Cloudcogs\OAuth2\Client\Provider\Keycloak;
 
+use Exception;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessTokenInterface;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\UMAAccessTokenException;
 
@@ -10,8 +12,14 @@ class PolicyManagement extends AbstractAuthorizationServices
     const PARAM_RESOURCE = "resource";
     const PARAM_SCOPE = "scope";
     
-    private $UMAPolicyAccessToken;
-    
+    private AccessTokenInterface $UMAPolicyAccessToken;
+
+    /**
+     * @param array $params
+     * @return array
+     * @throws UMAAccessTokenException
+     * @throws Exception
+     */
     public function getPolicies(array $params = []) : array
     {
         $params = $this->validateDataArray($params);
@@ -42,10 +50,16 @@ class PolicyManagement extends AbstractAuthorizationServices
             return [];
         } 
         else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+            throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
         }
     }
-    
+
+    /**
+     * @param UMAPolicy $UMAPolicy
+     * @return bool
+     * @throws UMAAccessTokenException
+     * @throws Exception
+     */
     public function deletePolicy(UMAPolicy $UMAPolicy) : bool
     {
         $PAT = $this->getUMAPolicyAccessToken()->getToken();
@@ -62,10 +76,16 @@ class PolicyManagement extends AbstractAuthorizationServices
             return true;
         }
         else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+            throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
         }
     }
-    
+
+    /**
+     * @param UMAPolicy $UMAPolicy
+     * @return UMAPolicy
+     * @throws UMAAccessTokenException
+     * @throws Exception
+     */
     public function createPolicy(UMAPolicy $UMAPolicy) : UMAPolicy
     {
         $PAT = $this->getUMAPolicyAccessToken()->getToken();
@@ -85,10 +105,16 @@ class PolicyManagement extends AbstractAuthorizationServices
             return new UMAPolicy($resourceId, $policyData);
         }
         else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+            throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
         }
     }
-    
+
+    /**
+     * @param UMAPolicy $UMAPolicy
+     * @return bool
+     * @throws UMAAccessTokenException
+     * @throws Exception
+     */
     public function updatePolicy(UMAPolicy $UMAPolicy) : bool
     {
         $PAT = $this->getUMAPolicyAccessToken()->getToken();
@@ -107,10 +133,15 @@ class PolicyManagement extends AbstractAuthorizationServices
             return true;
         }
         else {
-            throw new \Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
+            throw new Exception($HttpResponse->getReasonPhrase(), $HttpResponse->getStatusCode());
         }
     }
-    
+
+    /**
+     * @param string|null $Token
+     * @return AccessTokenInterface
+     * @throws IdentityProviderException
+     */
     public function getUMAPolicyAccessToken(string $Token = null) : AccessTokenInterface
     {
         if ($Token)
@@ -118,12 +149,10 @@ class PolicyManagement extends AbstractAuthorizationServices
             $this->UMAPolicyAccessToken = $this->Keycloak->tokenExchange($Token);
         }
         
-        if($this->UMAPolicyAccessToken) return $this->UMAPolicyAccessToken;
-        
-        throw new UMAAccessTokenException();
+        return $this->UMAPolicyAccessToken;
     }
     
-    public function setUMAPolicyAccessToken(AccessTokenInterface $UMAPolicyAccessToken)
+    public function setUMAPolicyAccessToken(AccessTokenInterface $UMAPolicyAccessToken): PolicyManagement
     {
         $this->UMAPolicyAccessToken = $UMAPolicyAccessToken;
         return $this;
