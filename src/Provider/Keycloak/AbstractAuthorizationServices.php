@@ -49,7 +49,7 @@ abstract class AbstractAuthorizationServices
      */
     public function getProtectionAPIToken() : AccessTokenInterface
     {
-        return (!(($this->PAT) instanceof AccessTokenInterface))? $this->PAT = $this->Keycloak->getAccessToken('client_credentials') : $this->PAT;
+        return (!isset($this->PAT))? $this->PAT = $this->Keycloak->getAccessToken('client_credentials') : $this->PAT;
     }
 
     /**
