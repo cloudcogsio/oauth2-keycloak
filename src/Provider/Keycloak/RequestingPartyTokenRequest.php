@@ -184,4 +184,13 @@ class RequestingPartyTokenRequest extends Request
         $this->getPost()->set('response_mode', $mode);
         return $this;
     }
+
+    /**
+     * Return the specified response mode (if any)
+     *
+     * @return string|null
+     */
+    public function getResponseMode() : ?string {
+        return $this->getPost()->get('response_mode');
+    }
 }

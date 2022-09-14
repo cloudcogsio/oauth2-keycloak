@@ -25,15 +25,15 @@ class RequestingPartyTokenResponse extends Response
     {
         $this->Keycloak = $Keycloak;
         $this->RPT = $RequestingPartyToken;
-        
-        if ($useTokenHint)
-        {
-            $this->ParsedToken = $Keycloak->introspectToken($RequestingPartyToken->getToken(), [
-                self::PARAM_TOKEN_TYPE_HINT => self::TOKEN_TYPE_RPT
-            ], false);
-        } 
-        else {
-            $this->ParsedToken = $Keycloak->introspectToken($RequestingPartyToken->getToken());
+
+        if ($RequestingPartyToken->isAccessToken()) {
+            if ($useTokenHint) {
+                $this->ParsedToken = $Keycloak->introspectToken($RequestingPartyToken->getToken(), [
+                    self::PARAM_TOKEN_TYPE_HINT => self::TOKEN_TYPE_RPT
+                ], false);
+            } else {
+                $this->ParsedToken = $Keycloak->introspectToken($RequestingPartyToken->getToken());
+            }
         }
     }
     
@@ -42,13 +42,23 @@ class RequestingPartyTokenResponse extends Response
         return $this->RPT;
     }
     
-    public function getParsedToken() : ParsedToken
+    public function getParsedToken() : ?ParsedToken
     {
-        return $this->ParsedToken;
+        return (isset($this->ParsedToken)) ? $this->ParsedToken : null;
     }
     
     public function getPermissions() : ?array
     {
-        return $this->getParsedToken()->permissions;
+        if($this->RPT->isAccessToken()) {
+            return $this->getParsedToken()->permissions;
+        }
+
+        else {
+            return $this->RPT->getPermissions();
+        }
+    }
+
+    public function getDecision() : bool {
+        return $this->RPT->getDecision();
     }
 }
