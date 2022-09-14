@@ -14,6 +14,7 @@ namespace Cloudcogs\OAuth2\Client\Provider;
 use Cloudcogs\OAuth2\Client\OpenIDConnect\Exception\InvalidUrlException;
 use Cloudcogs\OAuth2\Client\OpenIDConnect\Exception\TokenIntrospectionException;
 use Cloudcogs\OAuth2\Client\OpenIDConnect\Exception\WellKnownEndpointException;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\PolicyEnforcer;
 use Psr\Http\Message\ResponseInterface;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\RequiredOptionMissingException;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
@@ -113,6 +114,9 @@ class Keycloak extends AbstractOIDCProvider
     
     /** @var PolicyManagement **/
     protected PolicyManagement $PolicyManagement;
+
+    /** @var PolicyEnforcer  **/
+    protected PolicyEnforcer $PolicyEnforcer;
 
     /**
      * @param array $options
@@ -491,5 +495,47 @@ class Keycloak extends AbstractOIDCProvider
     public function getAdminApiBaseUrl(): string
     {
         return $this->adminApiBaseUrl;
+    }
+
+    /**
+     * Get the 'resource' key from keycloak config (if any)
+     * This is used as the audience claim when retrieving RPTs
+     *
+     * @return string|null
+     */
+    public function getAudienceFromKeycloakConfig() : ?string {
+        return (isset($this->config)) ? $this->config->getClientId() : null;
+    }
+
+    /**
+     * Proxy to Cloudcogs\OAuth2\Client\Provider\Keycloak\PolicyEnforcer
+     *
+     * @param object|null $WellKnownUMA2Configuration
+     * @return PolicyEnforcer
+     * @throws InvalidUrlException
+     * @throws WellKnownEndpointException
+     */
+    public function PolicyEnforcer(object $WellKnownUMA2Configuration = null) : PolicyEnforcer {
+        if (!isset($this->PolicyEnforcer))
+        {
+            $uma2_url = ((substr($this->authServerUrl,-1) == "/") ? rtrim($this->authServerUrl,"/") : $this->authServerUrl)."/realms/".$this->realm."/.well-known/uma2-configuration";
+
+            if ($WellKnownUMA2Configuration == null)
+            {
+                $resource_registration_endpoint = "";
+            }
+            else {
+                $resource_registration_endpoint = $WellKnownUMA2Configuration->resource_registration_endpoint;
+            }
+
+            $this->PolicyEnforcer = new PolicyEnforcer($this, $uma2_url, empty($resource_registration_endpoint));
+
+            if ($WellKnownUMA2Configuration)
+            {
+                $this->PolicyEnforcer->setWellKnownConfiguration($WellKnownUMA2Configuration);
+            }
+        }
+
+        return $this->PolicyEnforcer;
     }
 }
