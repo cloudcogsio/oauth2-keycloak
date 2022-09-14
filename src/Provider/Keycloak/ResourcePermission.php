@@ -5,6 +5,7 @@ namespace Cloudcogs\OAuth2\Client\Provider\Keycloak;
 class ResourcePermission
 {
     const SCOPE = "scope";
+    const RESOURCE_SCOPES = "resource_scopes";
     const RESOURCE_ID = "rsid";
     const RESOURCE_NAME = "rsname";
 
@@ -23,8 +24,12 @@ class ResourcePermission
         return $this->permission[self::RESOURCE_ID];
     }
 
-    public function getResourceScopes() : array {
+    public function getScopes() : array {
         return $this->permission[self::SCOPE];
+    }
+
+    public function getResourceScopes() : ?array {
+        return $this->permission[self::RESOURCE_SCOPES];
     }
 
     public function hasScope(string $scope) : bool {

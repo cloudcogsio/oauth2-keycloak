@@ -64,7 +64,6 @@ class PolicyEnforcer extends AbstractAuthorizationServices
         // No permitted resources/permissions returned from keycloak, return 403
         if ($permissions == null) return new EmptyResponse(StatusCodeInterface::STATUS_FORBIDDEN);
 
-        /** @var $permission ResourcePermission */
         foreach ($permissions as $permission) {
             if ($permission->getResourceId() == $kcResourceId) {
                 $this->permission = $permission;
@@ -95,10 +94,15 @@ class PolicyEnforcer extends AbstractAuthorizationServices
     public function getKeycloakPermissions(): ?array
     {
         $RPTRequest = new RequestingPartyTokenRequest($this->Keycloak, $this->bearerToken);
-        $RPTRequest->setAudience($this->Keycloak->getAudienceFromKeycloakConfig())->setResponseMode();
+        $RPTRequest->setAudience($this->Keycloak->getAudienceFromKeycloakConfig())->setResponseMode('permissions');
 
         $RPTResponse = $this->Keycloak->getAuthorizationToken($RPTRequest);
-        return $RPTResponse->getPermissions();
+        $permissions = $RPTResponse->getPermissions();
+        array_walk($permissions, function(&$permission, $i){
+            $permission = new ResourcePermission((array) $permission);
+        });
+
+        return $permissions;
     }
 
     /**
