@@ -47,7 +47,7 @@ class RequestingPartyTokenResponse extends Response
         return $this->ParsedToken;
     }
     
-    public function getPermissions()
+    public function getPermissions() : ?array
     {
         return $this->getParsedToken()->permissions;
     }
