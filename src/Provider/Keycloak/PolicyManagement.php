@@ -17,7 +17,6 @@ class PolicyManagement extends AbstractAuthorizationServices
     /**
      * @param array $params
      * @return array
-     * @throws UMAAccessTokenException
      * @throws Exception
      */
     public function getPolicies(array $params = []) : array
@@ -57,7 +56,6 @@ class PolicyManagement extends AbstractAuthorizationServices
     /**
      * @param UMAPolicy $UMAPolicy
      * @return bool
-     * @throws UMAAccessTokenException
      * @throws Exception
      */
     public function deletePolicy(UMAPolicy $UMAPolicy) : bool
@@ -83,7 +81,6 @@ class PolicyManagement extends AbstractAuthorizationServices
     /**
      * @param UMAPolicy $UMAPolicy
      * @return UMAPolicy
-     * @throws UMAAccessTokenException
      * @throws Exception
      */
     public function createPolicy(UMAPolicy $UMAPolicy) : UMAPolicy
@@ -112,7 +109,6 @@ class PolicyManagement extends AbstractAuthorizationServices
     /**
      * @param UMAPolicy $UMAPolicy
      * @return bool
-     * @throws UMAAccessTokenException
      * @throws Exception
      */
     public function updatePolicy(UMAPolicy $UMAPolicy) : bool

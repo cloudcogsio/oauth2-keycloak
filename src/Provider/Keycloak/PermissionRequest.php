@@ -7,7 +7,7 @@ class PermissionRequest
     const RESOURCE_SCOPES = "resource_scopes";
     const CLAIMS = "claims";
     
-    private array $requestData;
+    private array $requestData = [];
 
     /**
      * @param string $resourceId

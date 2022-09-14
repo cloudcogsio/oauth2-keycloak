@@ -32,7 +32,7 @@ class PermissionManagement extends AbstractAuthorizationServices
      */
     public function createPermissionTicket() : string
     {
-        if ($this->permissionList)
+        if (isset($this->permissionList))
         {
             $PAT = $this->getProtectionAPIToken();
             
@@ -64,11 +64,11 @@ class PermissionManagement extends AbstractAuthorizationServices
      * Add a permission request to the list of pending requests before submitting with $this->createPermissionTicket
      * 
      * @param PermissionRequest $PermissionRequest
-     * @return \Cloudcogs\OAuth2\Client\Provider\Keycloak\PermissionManagement
+     * @return PermissionManagement
      */
     public function addPermissionRequest(PermissionRequest $PermissionRequest): PermissionManagement
     {
-        if (!$this->permissionList) $this->permissionList = [];
+        if (!isset($this->permissionList)) $this->permissionList = [];
         
         $this->permissionList[] = $PermissionRequest->getRequestData();
         
