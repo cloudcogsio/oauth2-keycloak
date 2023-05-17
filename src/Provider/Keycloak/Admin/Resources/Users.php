@@ -60,9 +60,8 @@ class Users extends AbstractApiResource
 
     /**
      * @param string $Id
-     * @return UserRepresentation
+     * @return UserRepresentation|null
      * @throws IdentityProviderException
-     * @throws Exception
      */
     public function getUser(string $Id) : ?UserRepresentation
     {

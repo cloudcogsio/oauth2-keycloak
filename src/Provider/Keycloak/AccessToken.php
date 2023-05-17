@@ -5,7 +5,7 @@ use League\OAuth2\Client\Token\AccessToken as LeagueAccessToken;
 
 class AccessToken extends LeagueAccessToken
 {
-    protected $refresh_expires;
+    protected string|int|float $refresh_expires;
     
     public function __construct(array $options)
     {
@@ -24,7 +24,7 @@ class AccessToken extends LeagueAccessToken
         }
     }
     
-    public function getRefreshExpires()
+    public function getRefreshExpires(): float|int|string
     {
         return $this->refresh_expires;
     }

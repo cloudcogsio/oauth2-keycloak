@@ -24,7 +24,7 @@ class ClientFactory
      * @throws ApiResourceException
      * @throws ApiResourceNotFoundException
      */
-    function __invoke(Keycloak $Keycloak, string $Resource)
+    function __invoke(Keycloak $Keycloak, string $Resource): mixed
     {        
         $this->validateResource($Resource);
         
@@ -42,7 +42,7 @@ class ClientFactory
      * @return void
      * @throws ApiResourceException
      */
-    private function validateResource($Resource)
+    private function validateResource($Resource): void
     {
         if (!isset($this->validatedResources))
         {

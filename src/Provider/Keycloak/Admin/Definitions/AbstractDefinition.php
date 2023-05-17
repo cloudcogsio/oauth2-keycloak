@@ -1,8 +1,6 @@
 <?php
 namespace Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\Definitions;
 
-use Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\Resources\AbstractApiResource;
-
 abstract class AbstractDefinition
 {
     protected array $resourceParams;

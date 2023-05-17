@@ -91,7 +91,6 @@ class ResourceManagement extends AbstractAuthorizationServices
      * @param Resource $Resource
      * @return bool
      * @throws IdentityProviderException
-     * @throws Exception
      */
     public function updateResource(string $resourceId, Resource $Resource) : bool
     {

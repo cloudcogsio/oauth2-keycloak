@@ -1,6 +1,7 @@
 <?php
 namespace Cloudcogs\OAuth2\Client\Provider\Keycloak;
 
+use Cloudcogs\OAuth2\Client\OpenIDConnect\Exception\TokenIntrospectionException;
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak;
 use League\OAuth2\Client\Token\AccessTokenInterface;
@@ -10,6 +11,9 @@ class ResourceOwner implements ResourceOwnerInterface
 {
     protected array $response;
 
+    /**
+     * @throws TokenIntrospectionException
+     */
     public function __construct(array $response, AccessTokenInterface $token, AbstractOIDCProvider $Provider)
     {
         $parsedToken = $Provider->introspectToken($token->getToken());

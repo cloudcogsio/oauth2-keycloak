@@ -30,7 +30,11 @@ class UMAPolicy
     
     private array $data;
     private ?string $resourceId;
-    
+
+    /**
+     * @throws InvalidUMAPolicyLogic
+     * @throws InvalidDecisionStrategy
+     */
     public function __construct(string $resourceId = null, array $data = [])
     {
         $this->resourceId = $resourceId;

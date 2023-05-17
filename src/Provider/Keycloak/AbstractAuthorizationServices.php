@@ -20,7 +20,7 @@ use League\OAuth2\Client\Token\AccessTokenInterface;
 
 abstract class AbstractAuthorizationServices
 {
-    private $uma2_well_known_url;
+    private string|array $uma2_well_known_url;
     private object $WellKnownUMA2Configuration;
     private AccessTokenInterface $PAT;
     

@@ -16,23 +16,28 @@ class ResourcePermission
         $this->permission = $permission;
     }
 
-    public function getResourceName() : string {
+    public function getResourceName() : string
+    {
         return $this->permission[self::RESOURCE_NAME];
     }
 
-    public function getResourceId() : string {
+    public function getResourceId() : string
+    {
         return $this->permission[self::RESOURCE_ID];
     }
 
-    public function getScopes() : array {
+    public function getScopes() : array
+    {
         return $this->permission[self::SCOPE];
     }
 
-    public function getResourceScopes() : ?array {
+    public function getResourceScopes() : ?array
+    {
         return $this->permission[self::RESOURCE_SCOPES];
     }
 
-    public function hasScope(string $scope) : bool {
+    public function hasScope(string $scope) : bool
+    {
         return in_array($scope, $this->getResourceScopes());
     }
 }

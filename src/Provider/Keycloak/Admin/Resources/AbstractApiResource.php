@@ -2,7 +2,9 @@
 namespace Cloudcogs\OAuth2\Client\Provider\Keycloak\Admin\Resources;
 
 use Cloudcogs\OAuth2\Client\Provider\Keycloak;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
+use Psr\Http\Message\ResponseInterface;
 
 abstract class AbstractApiResource
 {
@@ -26,7 +28,7 @@ abstract class AbstractApiResource
 
     /**
      * @return AccessToken
-     * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
+     * @throws IdentityProviderException
      */
     protected final function getAccessToken() : AccessToken
     {
@@ -73,10 +75,10 @@ abstract class AbstractApiResource
 
     /**
      * @param array $params
-     * @return \Psr\Http\Message\ResponseInterface
-     * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
+     * @return ResponseInterface
+     * @throws IdentityProviderException
      */
-    protected function getResourceData(array $params = []): \Psr\Http\Message\ResponseInterface
+    protected function getResourceData(array $params = []): ResponseInterface
     {
         $validated = $this->validateParams($params);
 
@@ -93,11 +95,11 @@ abstract class AbstractApiResource
 
     /**
      * @param string $resourceId
-     * @return \Psr\Http\Message\ResponseInterface
-     * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
+     * @return ResponseInterface
+     * @throws IdentityProviderException
      * @throws \Exception
      */
-    protected function getResource(string $resourceId): \Psr\Http\Message\ResponseInterface
+    protected function getResource(string $resourceId): ResponseInterface
     {
         $HttpRequest = $this->Keycloak
             ->getRequestFactory()
@@ -120,7 +122,7 @@ abstract class AbstractApiResource
     /**
      * @param string $ResourceAsString
      * @return bool
-     * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
+     * @throws IdentityProviderException
      * @throws \Exception
      */
     protected function addResource(string $ResourceAsString): bool
@@ -147,7 +149,7 @@ abstract class AbstractApiResource
     /**
      * @param string $resourceId
      * @return bool
-     * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
+     * @throws IdentityProviderException
      * @throws \Exception
      */
     protected function deleteResource(string $resourceId): bool
@@ -174,7 +176,7 @@ abstract class AbstractApiResource
      * @param string $resourceId
      * @param string $ResourceAsString
      * @return bool
-     * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
+     * @throws IdentityProviderException
      * @throws \Exception
      */
     protected function updateResource(string $resourceId, string $ResourceAsString): bool
@@ -200,7 +202,7 @@ abstract class AbstractApiResource
 
     /**
      * @return string[]
-     * @throws \League\OAuth2\Client\Provider\Exception\IdentityProviderException
+     * @throws IdentityProviderException
      */
     protected function getHttpRequestHeaders(): array
     {

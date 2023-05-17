@@ -4,7 +4,6 @@ namespace Cloudcogs\OAuth2\Client\Provider\Keycloak;
 use Exception;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessTokenInterface;
-use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\UMAAccessTokenException;
 
 class PolicyManagement extends AbstractAuthorizationServices
 {

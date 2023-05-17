@@ -48,10 +48,9 @@ class Groups extends AbstractApiResource
 
     /**
      * @param string $Id
-     * @return GroupRepresentation
+     * @return GroupRepresentation|null
+     * @throws ApiGroupNotFoundException ;
      * @throws IdentityProviderException
-     * @throws Exception
-     * @throws ApiGroupNotFoundException;
      */
     public function getGroup(string $Id) : ?GroupRepresentation
     {

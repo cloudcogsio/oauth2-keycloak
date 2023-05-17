@@ -68,7 +68,7 @@ class UserRepresentation extends AbstractDefinition
     }
 
     /**
-     * @return array
+     * @return array|null
      */
     public function getAccess() : ?array
     {
@@ -86,7 +86,7 @@ class UserRepresentation extends AbstractDefinition
     }
 
     /**
-     * @return array
+     * @return array|null
      */
     public function getAttributes() : ?array
     {
@@ -104,7 +104,7 @@ class UserRepresentation extends AbstractDefinition
     }
 
     /**
-     * @return array
+     * @return array|null
      */
     public function getClientConsents() : ?array
     {
@@ -122,7 +122,7 @@ class UserRepresentation extends AbstractDefinition
     }
 
     /**
-     * @return array
+     * @return array|null
      */
     public function getClientRoles() : ?array
     {
@@ -158,7 +158,7 @@ class UserRepresentation extends AbstractDefinition
     }
 
     /**
-     * @return array
+     * @return array|null
      */
     public function getCredentials() : ?array
     {
@@ -176,7 +176,7 @@ class UserRepresentation extends AbstractDefinition
     }
 
     /**
-     * @return array
+     * @return array|null
      */
     public function getDisableableCredentialTypes() : ?array
     {
@@ -212,7 +212,7 @@ class UserRepresentation extends AbstractDefinition
     }
 
     /**
-     * @return bool
+     * @return bool|null
      */
     public function getEmailVerified() : ?bool
     {
@@ -230,7 +230,7 @@ class UserRepresentation extends AbstractDefinition
     }
 
     /**
-     * @return bool
+     * @return bool|null
      */
     public function getEnabled() : ?bool
     {
@@ -248,7 +248,7 @@ class UserRepresentation extends AbstractDefinition
     }
 
     /**
-     * @return array
+     * @return array|null
      */
     public function getFederatedIdentities() : ?array
     {
@@ -302,7 +302,7 @@ class UserRepresentation extends AbstractDefinition
     }
 
     /**
-     * @return array
+     * @return array|null
      */
     public function getGroups() : ?array
     {
@@ -392,7 +392,7 @@ class UserRepresentation extends AbstractDefinition
     }
 
     /**
-     * @return array
+     * @return array|null
      */
     public function getRealmRoles() : ?array
     {
@@ -489,7 +489,7 @@ class UserRepresentation extends AbstractDefinition
     /**
      * @return mixed|null
      */
-    public function getTotp()
+    public function getTotp(): mixed
     {
         return $this->{self::TOTP};
     }
