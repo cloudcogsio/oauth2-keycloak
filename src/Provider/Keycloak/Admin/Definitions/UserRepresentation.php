@@ -43,7 +43,7 @@ class UserRepresentation extends AbstractDefinition
 
     protected Users $Users;
 
-    public function __construct(array $data = [], Users $Users)
+    public function __construct(array $data, Users $Users)
     {
         $this->Users = $Users;
         parent::__construct($data);
