@@ -14,8 +14,11 @@ namespace Cloudcogs\OAuth2\Client\Provider;
 use Cloudcogs\OAuth2\Client\OpenIDConnect\Exception\InvalidUrlException;
 use Cloudcogs\OAuth2\Client\OpenIDConnect\Exception\TokenIntrospectionException;
 use Cloudcogs\OAuth2\Client\OpenIDConnect\Exception\WellKnownEndpointException;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\AccessToken;
+use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\BrokerTokenException;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\PolicyEnforcer;
 use JetBrains\PhpStorm\NoReturn;
+use Laminas\Http\Headers;
 use Psr\Http\Message\ResponseInterface;
 use Cloudcogs\OAuth2\Client\Provider\Keycloak\Exception\RequiredOptionMissingException;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
@@ -495,6 +498,47 @@ class Keycloak extends AbstractOIDCProvider
     public function getAdminApiBaseUrl(): string
     {
         return $this->adminApiBaseUrl;
+    }
+
+    /**
+     * URL used to retrieve broker token (if defined/permitted)
+     *
+     * @param string $broker
+     * @return string
+     */
+    public function getBrokerTokenUrl(string $broker): string
+    {
+        return ((str_ends_with($this->authServerUrl, "/")) ? rtrim($this->authServerUrl,"/") : $this->authServerUrl)."/realms/".$this->realm."/broker/".$broker."/token";
+    }
+
+    public function getBrokerToken(string $broker, string $accessToken): AccessTokenInterface
+    {
+        $Client = new Client($this->getBrokerTokenUrl($broker),[
+            'adapter'     => Curl::class,
+            'curloptions' => [
+                CURLOPT_RETURNTRANSFER => true,
+            ]
+        ]);
+
+        $Headers = new Headers();
+        $Headers->addHeaderLine('Authorization', 'Bearer '.$accessToken);
+
+        $Client->setMethod('GET')->setHeaders($Headers);
+
+        $Response = $Client->send();
+
+        $AccessToken = json_decode($Response->getBody(), true);
+
+        if (is_array($AccessToken))
+        {
+            return match ($Response->getStatusCode()) {
+                200 => new AccessToken($AccessToken),
+                400 => throw new BrokerTokenException($AccessToken['errorMessage']),
+                default => throw new BrokerTokenException()
+            };
+        }
+
+        throw new BrokerTokenException();
     }
 
     /**
