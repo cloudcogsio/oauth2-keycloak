@@ -23,8 +23,8 @@
 	"require" : {
 		"php" : "^8.2",
 		"cloudcogsio/oauth2-openid-connect-discovery" : "dev-php-8x",
-		"laminas/laminas-http" : "^2.18.0",
-		"laminas/laminas-diactoros": "^2.25.2",
+		"laminas/laminas-http" : "^2.20.0",
+		"laminas/laminas-diactoros": "^3.5.0",
 		"fig/http-message-util": "^1.1.5",
 		"ext-json": "*",
 		"ext-curl": "*"
